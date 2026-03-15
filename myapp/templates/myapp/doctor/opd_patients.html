@@ -1,0 +1,95 @@
+{% extends 'myapp/doctor/base.html' %}
+
+{% block title %}OPD Patients{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Today's OPD</h2>
+    <div class="badge bg-primary fs-6 px-3 py-2 rounded-pill">{{ appointments.count }} Patients</div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Token</th>
+                        <th>Patient</th>
+                        <th>Age / Gender</th>
+                        <th>Visit Type</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                    <tr>
+                        <td class="ps-4">
+                            <span class="badge bg-light text-dark border border-secondary rounded-pill px-3">
+                                {{ appt.token_no|default:"--" }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                    style="width: 40px; height: 40px;">
+                                    <span class="fw-bold">{{ appt.patient.name|slice:":1" }}</span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ appt.patient.name }}</div>
+                                    <div class="small text-muted">{{ appt.patient.patient_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ appt.patient.age }} Y / {{ appt.patient.gender }}</td>
+                        <td>
+                            {% if appt.visit_type == 'New' %}
+                            <span class="badge bg-success-subtle text-success px-3">New</span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info px-3">Follow-up</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appt.status == 'Pending' %}
+                            <span class="badge bg-warning text-dark">Waiting</span>
+                            {% elif appt.status == 'Completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% else %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-history me-2 text-muted"></i>
+                                            View History</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item"
+                                            href="{% url 'doctor_prescriptions' %}?patient={{ appt.patient.id }}&appointment={{ appt.id }}"><i
+                                                class="fas fa-prescription me-2 text-primary"></i> Prescribe</a></li>
+                                    <li><a class="dropdown-item"
+                                            href="{% url 'doctor_lab_reports' %}?patient={{ appt.patient.id }}"><i
+                                                class="fas fa-flask me-2 text-info"></i> Lab Test</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-user-injured fs-1 mb-3 opacity-25"></i>
+                            <p>No OPD patients scheduled for today.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

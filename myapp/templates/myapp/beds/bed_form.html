@@ -1,0 +1,160 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if bed %}Edit Bed{% else %}Add New Bed{% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <!-- Ward Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Ward Type</label>
+                            <select name="ward_type" class="form-select" required>
+
+                                <optgroup label="Hospital Bed Charges">
+                                    <option value="General"
+                                        {% if bed and bed.ward_type == 'General' %}selected{% endif %}>
+                                        General Ward Bed
+                                    </option>
+
+                                    <option value="SemiPrivate"
+                                        {% if bed and bed.ward_type == 'SemiPrivate' %}selected{% endif %}>
+                                        Semi-Private Bed
+                                    </option>
+
+                                    <option value="Private"
+                                        {% if bed and bed.ward_type == 'Private' %}selected{% endif %}>
+                                        Private Room Bed
+                                    </option>
+
+                                    <option value="Deluxe"
+                                        {% if bed and bed.ward_type == 'Deluxe' %}selected{% endif %}>
+                                        Deluxe / Suite Bed
+                                    </option>
+                                </optgroup>
+
+                                <optgroup label="Critical Care Beds">
+                                    <option value="ICU"
+                                        {% if bed and bed.ward_type == 'ICU' %}selected{% endif %}>
+                                        ICU Bed
+                                    </option>
+
+                                    <option value="CCU"
+                                        {% if bed and bed.ward_type == 'CCU' %}selected{% endif %}>
+                                        CCU Bed
+                                    </option>
+
+                                    <option value="NICU"
+                                        {% if bed and bed.ward_type == 'NICU' %}selected{% endif %}>
+                                        NICU Bed
+                                    </option>
+
+                                    <option value="PICU"
+                                        {% if bed and bed.ward_type == 'PICU' %}selected{% endif %}>
+                                        PICU Bed
+                                    </option>
+
+                                    <option value="HDU"
+                                        {% if bed and bed.ward_type == 'HDU' %}selected{% endif %}>
+                                        HDU Bed
+                                    </option>
+                                </optgroup>
+
+                                <optgroup label="Special / Treatment Beds">
+                                    <option value="Emergency"
+                                        {% if bed and bed.ward_type == 'Emergency' %}selected{% endif %}>
+                                        Emergency Bed
+                                    </option>
+
+                                    <option value="Recovery"
+                                        {% if bed and bed.ward_type == 'Recovery' %}selected{% endif %}>
+                                        Recovery Bed
+                                    </option>
+
+                                    <option value="PostOp"
+                                        {% if bed and bed.ward_type == 'PostOp' %}selected{% endif %}>
+                                        Post-Op Bed
+                                    </option>
+
+                                    <option value="Orthopedic"
+                                        {% if bed and bed.ward_type == 'Orthopedic' %}selected{% endif %}>
+                                        Orthopedic Bed
+                                    </option>
+                                </optgroup>
+
+                            </select>
+                        </div>
+
+                        <!-- Bed Number -->
+                        <div class="mb-3">
+                            <label class="form-label">Bed Number</label>
+                            <input type="text"
+                                   name="bed_number"
+                                   class="form-control"
+                                   value="{% if bed %}{{ bed.bed_number }}{% endif %}"
+                                   required
+                                   placeholder="e.g. G-101">
+                        </div>
+
+                        <!-- Daily Charge -->
+                        <div class="mb-3">
+                            <label class="form-label">Daily Charge (₹)</label>
+                            <input type="number"
+                                   step="0.01"
+                                   name="daily_charge"
+                                   class="form-control"
+                                   value="{% if bed %}{{ bed.daily_charge }}{% endif %}"
+                                   required>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select" required>
+                                <option value="Available"
+                                    {% if bed and bed.status == 'Available' %}selected{% endif %}>
+                                    Available
+                                </option>
+
+                                <option value="Occupied"
+                                    {% if bed and bed.status == 'Occupied' %}selected{% endif %}>
+                                    Occupied
+                                </option>
+
+                                <option value="Maintenance"
+                                    {% if bed and bed.status == 'Maintenance' %}selected{% endif %}>
+                                    Maintenance
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'bed_list' %}" class="btn btn-secondary me-md-2">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if bed %}Update Bed{% else %}Add Bed{% endif %}
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

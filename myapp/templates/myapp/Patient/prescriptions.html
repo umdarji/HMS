@@ -1,0 +1,99 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}My Prescriptions{% endblock %}
+{% block header %}My Prescriptions{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Prescription History</h5>
+    </div>
+    <div class="card-body">
+        {% if prescriptions %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor</th>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prescription in prescriptions %}
+                    <tr>
+                        <td>{{ prescription.created_at|date:"Y-m-d" }}</td>
+                        <td>Dr. {{ prescription.doctor.name }}</td>
+                        <td>{{ prescription.medicines|truncatewords:3 }}</td>
+                        <td>{{ prescription.diagnosis|default:"N/A" }}</td>
+                        <td>{{ prescription.follow_up_date|date:"M d, Y"|default:"As prescribed" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#viewModal{{ prescription.id }}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <a href="{% url 'download_prescription' prescription.id %}" target="_blank"
+                                class="btn btn-sm btn-success">
+                                <i class="fas fa-print"></i> Print/DL
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- View Modal -->
+                    <div class="modal fade" id="viewModal{{ prescription.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Prescription Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <strong>Doctor:</strong> Dr. {{ prescription.doctor.name }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Date:</strong> {{ prescription.created_at|date:"M d, Y" }}
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <h6>Diagnosis:</h6>
+                                    <p>{{ prescription.diagnosis|default:"Not specified" }}</p>
+
+                                    <h6>Medications:</h6>
+                                    <p>{{ prescription.medicines }}</p>
+
+                                    <h6>Advice:</h6>
+                                    <p>{{ prescription.advice|default:"No additional advice" }}</p>
+
+                                    {% if prescription.follow_up_date %}
+                                    <h6>Follow-up Date:</h6>
+                                    <p>{{ prescription.follow_up_date|date:"M d, Y" }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-success">
+                                        <i class="fas fa-download me-2"></i>Download PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-prescription-bottle fa-4x mb-3"></i>
+            <h5>No Prescriptions Found</h5>
+            <p>You don't have any prescriptions yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

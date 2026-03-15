@@ -1,0 +1,68 @@
+{% extends 'myapp/admin/base.html' %}
+{% load static %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">Appointments</h2>
+</div>
+<div class="row my-2">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">All Appointments</h5>
+                {% if appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Token No</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Department</th>
+                                <th>Date & Time</th>
+                                <th>Reason</th>
+                                <th>Fee</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in appointments %}
+                            <tr>
+                                <td>{{ appointment.token_no }}</td>
+                                <td>{{ appointment.patient.name }}</td>
+                                <td>{{ appointment.doctor.name }}</td>
+                                <td>{{ appointment.doctor.department }}</td>
+                                <td>{{ appointment.appointment_date|date:"M d, Y H:i" }}</td>
+                                <td>{{ appointment.reason|default:"N/A" }}</td>
+                                <td>₹{{ appointment.fee }}</td>
+                                <td>
+                                    {% if appointment.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif appointment.status == 'confirmed' %}
+                                    <span class="badge bg-success">Confirmed</span>
+                                    {% elif appointment.status == 'completed' %}
+                                    <span class="badge bg-info">Completed</span>
+                                    {% elif appointment.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ appointment.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No appointments found.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

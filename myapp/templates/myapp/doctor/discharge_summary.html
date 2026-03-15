@@ -1,0 +1,130 @@
+{% extends 'myapp/doctor/base.html' %}
+
+{% block title %}Discharge Summary{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Discharge Summaries</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSummaryModal">
+        <i class="fas fa-plus me-2"></i>Create Summary
+    </button>
+</div>
+
+<!-- Summaries List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Patient</th>
+                        <th>Diagnosis</th>
+                        <th>Treatment</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for summary in summaries %}
+                    <tr>
+                        <td class="ps-4">{{ summary.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="fw-bold">{{ summary.patient.name }}</div>
+                            <div class="small text-muted">{{ summary.patient.patient_id }}</div>
+                        </td>
+                        <td>{{ summary.diagnosis|truncatechars:30 }}</td>
+                        <td>{{ summary.treatment_given|truncatechars:30 }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'discharge_print' summary.id %}" target="_blank"
+                                class="btn btn-sm btn-light border">
+                                <i class="fas fa-print me-1"></i> Print
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">No discharge summaries found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create Summary Modal -->
+<div class="modal fade" id="createSummaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Create Discharge Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Select Admitted Patient</label>
+                        <select name="admission" class="form-select" required>
+                            <option value="">-- Select Patient --</option>
+                            {% for admission in admitted_patients %}
+                            <option value="{{ admission.id }}">{{ admission.patient.name }} ({{ admission.ward_no }}/{{
+                                admission.bed_no }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Only currently admitted patients are shown.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Diagnosis</label>
+                            <textarea name="diagnosis" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Treatment Given</label>
+                            <textarea name="treatment" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Final Advice</label>
+                            <textarea name="advice" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Follow-up Plan</label>
+                            <textarea name="plan" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-1"></i> Creating this summary will automatically request
+                        discharge for the patient.
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create & Request Discharge</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const admissionId = urlParams.get('admission');
+        if (admissionId) {
+            const select = document.querySelector('select[name="admission"]');
+            if (select) {
+                select.value = admissionId;
+                var myModal = new bootstrap.Modal(document.getElementById('createSummaryModal'));
+                myModal.show();
+            }
+        }
+    });
+</script>
+{% endblock %}

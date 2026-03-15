@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - HMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .otp-card {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        .otp-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .otp-header i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        .otp-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .otp-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+        .timer {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #667eea;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .btn-resend {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .btn-resend:hover {
+            background: #667eea;
+            color: white;
+        }
+        .btn-resend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .info-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="otp-card">
+        <div class="otp-header">
+            <i class="fas fa-shield-alt"></i>
+            <h3>Enter Verification Code</h3>
+            <p class="info-text">We've sent a 6-digit code to<br><strong>{{ email }}</strong></p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        <form method="POST" id="otpForm">
+            {% csrf_token %}
+            <div class="otp-inputs">
+                <input type="text" class="otp-input" maxlength="1" id="otp1" autofocus>
+                <input type="text" class="otp-input" maxlength="1" id="otp2">
+                <input type="text" class="otp-input" maxlength="1" id="otp3">
+                <input type="text" class="otp-input" maxlength="1" id="otp4">
+                <input type="text" class="otp-input" maxlength="1" id="otp5">
+                <input type="text" class="otp-input" maxlength="1" id="otp6">
+            </div>
+            <input type="hidden" name="otp" id="otpValue">
+            
+            <div class="timer" id="timer">5:00</div>
+            
+            <button type="submit" class="btn btn-primary btn-verify w-100 mb-3">
+                <i class="fas fa-check-circle me-2"></i>Verify OTP
+            </button>
+        </form>
+        
+        <button type="button" class="btn btn-resend w-100" id="resendBtn" disabled>
+            <i class="fas fa-redo me-2"></i>Resend OTP (<span id="resendTimer">60</span>s)
+        </button>
+        
+        <div class="text-center mt-3">
+            <a href="/login/" class="text-decoration-none">← Back to Login</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // OTP Input Auto-Focus
+        const inputs = document.querySelectorAll('.otp-input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+        
+        // Form Submit - Combine OTP
+        document.getElementById('otpForm').addEventListener('submit', (e) => {
+            const otp = Array.from(inputs).map(input => input.value).join('');
+            document.getElementById('otpValue').value = otp;
+            if (otp.length !== 6) {
+                e.preventDefault();
+                alert('Please enter complete 6-digit OTP');
+            }
+        });
+        
+        // Timer Countdown (5 minutes)
+        let timeLeft = 300;
+        const timerEl = document.getElementById('timer');
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft /60);
+            const seconds = timeLeft % 60;
+            timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerEl.textContent = 'OTP Expired';
+                timerEl.style.color = 'red';
+            }
+        }, 1000);
+        
+        // Resend Timer (60 seconds)
+        let resendTimeLeft = 60;
+        const resendBtn = document.getElementById('resendBtn');
+        const resendTimerEl = document.getElementById('resendTimer');
+        const resendInterval = setInterval(() => {
+            resendTimeLeft--;
+            resendTimerEl.textContent = resendTimeLeft;
+            
+            if (resendTimeLeft <= 0) {
+                clearInterval(resendInterval);
+                resendBtn.disabled = false;
+                resendBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Resend OTP';
+            }
+        }, 1000);
+        
+        // Resend OTP
+        resendBtn.addEventListener('click', () => {
+            window.location.href = '/resend-otp/';
+        });
+    </script>
+</body>
+</html>

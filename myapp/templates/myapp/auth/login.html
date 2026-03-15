@@ -1,0 +1,293 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hospital Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .login-header i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .login-header h2 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .login-body {
+            padding: 40px 30px;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 15px 10px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .role-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .role-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .role-btn i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .role-btn span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .input-group-text {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        #patient-register-hint {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-hospital-alt"></i>
+                <h2>Sanjeevan Health Care</h2>
+                <p class="mb-0 mt-2">Welcome Back!</p>
+            </div>
+            <div class="login-body">
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <form method="POST" id="loginForm">
+                    {% csrf_token %}
+
+                    <!-- Role Selection -->
+                    <div class="role-selector">
+                        <div class="role-btn active" data-role="admin">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Admin</span>
+                        </div>
+                        <div class="role-btn" data-role="doctor">
+                            <i class="fas fa-user-md"></i>
+                            <span>Doctor</span>
+                        </div>
+                        <div class="role-btn" data-role="patient">
+                            <i class="fas fa-user-injured"></i>
+                            <span>Patient</span>
+                        </div>
+                        <div class="role-btn" data-role="staff">
+                            <i class="fas fa-user-nurse"></i>
+                            <span>Staff</span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="role" id="selectedRole" value="{{ role|default:'admin' }}">
+
+                    <!-- Username/ID Field -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" id="usernameLabel">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" name="username" id="usernameField"
+                                placeholder="Enter username" required>
+                        </div>
+                        <small class="text-muted" id="usernameHint">Enter your admin username</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-login w-100">
+                        <i class="fas fa-paper-plane me-2"></i>Send OTP
+                    </button>
+                </form>
+
+                <div class="register-link" id="patient-register-hint">
+                    <p class="mb-0">Don't have an account?
+                        <a href="/register/patient/">Register as Patient</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const roleBtns = document.querySelectorAll('.role-btn');
+            const selectedRoleInput = document.getElementById('selectedRole');
+            const usernameLabel = document.getElementById('usernameLabel');
+            const usernameField = document.getElementById('usernameField');
+            const usernameHint = document.getElementById('usernameHint');
+            const registerHint = document.getElementById('patient-register-hint');
+
+            const roleConfig = {
+                admin: {
+                    label: 'Username / Email / Phone',
+                    placeholder: 'Enter Username, Email or Phone',
+                    hint: 'Enter your Admin Username, registered Email or Phone',
+                    showRegister: false
+                },
+                doctor: {
+                    label: 'Doctor ID / Email / Phone',
+                    placeholder: 'Enter Doctor ID, Email or Phone',
+                    hint: 'Enter your Doctor ID (DOCxxx), Email or Phone',
+                    showRegister: false
+                },
+                patient: {
+                    label: 'Patient ID / Email / Phone',
+                    placeholder: 'Enter Patient ID, Email or Phone',
+                    hint: 'Enter your Patient ID, Email or Phone Number',
+                    showRegister: true
+                },
+                staff: {
+                    label: 'Staff ID / Email / Phone',
+                    placeholder: 'Enter Staff ID, Email or Phone',
+                    hint: 'Enter your Staff ID (STFxxx), Email or Phone',
+                    showRegister: false
+                }
+            };
+
+            function setRole(role) {
+                // Remove active class from all
+                roleBtns.forEach(b => b.classList.remove('active'));
+                // Find and add active to matching button
+                const matchingBtn = document.querySelector(`.role-btn[data-role="${role}"]`);
+                if (matchingBtn) {
+                    matchingBtn.classList.add('active');
+                }
+
+                selectedRoleInput.value = role;
+
+                // Update form fields based on role
+                const config = roleConfig[role];
+                if (config) {
+                    usernameLabel.textContent = config.label;
+                    usernameField.placeholder = config.placeholder;
+                    usernameHint.textContent = config.hint;
+                    registerHint.style.display = config.showRegister ? 'block' : 'none';
+                }
+            }
+
+            roleBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const role = this.getAttribute('data-role');
+                    setRole(role);
+                });
+            });
+
+            // Check if there's a pre-selected role (e.g. from failed post)
+            const currentRole = selectedRoleInput.value;
+            if (currentRole && roleConfig[currentRole] && currentRole !== 'admin') {
+                setRole(currentRole);
+            }
+        });
+    </script>
+</body>
+
+</html>

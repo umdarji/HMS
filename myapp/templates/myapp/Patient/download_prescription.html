@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription - {{ prescription.patient.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .prescription-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area h2 {
+            color: #6366f1;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .doctor-info {
+            text-align: right;
+        }
+
+        .patient-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .rx-section {
+            margin-bottom: 30px;
+        }
+
+        .rx-header {
+            font-size: 24px;
+            font-weight: bold;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .medicine-table th {
+            background-color: #6366f1;
+            color: white;
+        }
+
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin-bottom: 5px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        @media print {
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .prescription-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+                padding: 20px;
+            }
+
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button onclick="window.print()" class="btn btn-primary btn-lg rounded-pill print-btn shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+            class="bi bi-printer-fill me-2" viewBox="0 0 16 16">
+            <path
+                d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v12.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V5h-2a1 1 0 0 1-1-1V1zm3 4a1 1 0 0 0-1 1v10.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V6a1 1 0 0 0-1-1H3z" />
+        </svg> Print / Save PDF
+    </button>
+
+    <div class="prescription-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-area">
+                <h2>Sanjeevan Health Care</h2>
+                <p class="mb-0 text-muted">Excellence in Healthcare</p>
+                <small>123 Medical Plaza, Health City</small>
+            </div>
+            <div class="doctor-info">
+                <h4 class="fw-bold">Dr. {{ prescription.doctor.name }}</h4>
+                <p class="mb-0 text-muted">{{ prescription.doctor.specialization }}</p>
+                <p class="mb-0 text-muted">Reg No: {{ prescription.doctor.registration_number|default:"SHC-DOC-001" }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Patient Info -->
+        <div class="patient-info">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Patient Name:</strong> {{ prescription.patient.name }}</p>
+                    <p class="mb-1"><strong>Age/Gender:</strong> {{ prescription.patient.age }} Years / {{
+                        prescription.patient.gender }}</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="mb-1"><strong>Date:</strong> {{ prescription.created_at|date:"d M Y, h:i A" }}</p>
+                    <p class="mb-1"><strong>Patient ID:</strong> {{ prescription.patient.patient_id }}</p>
+                </div>
+            </div>
+            <hr>
+            <p class="mb-0"><strong>Diagnosis:</strong> {{ prescription.diagnosis }}</p>
+        </div>
+
+        <!-- Medicines -->
+        <div class="rx-section">
+            <div class="rx-header">Rx</div>
+            <table class="table table-bordered medicine-table">
+                <thead>
+                    <tr>
+                        <th width="50%">Medicine Name</th>
+                        <th width="50%">Dosage & Instructions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Assuming generic text for now, or split if structured -->
+                    <tr>
+                        <td colspan="2" style="white-space: pre-line; padding: 15px;">{{ prescription.medicines }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Advice -->
+        {% if prescription.advice %}
+        <div class="mb-4">
+            <h5 class="fw-bold">Advice / Instructions:</h5>
+            <p>{{ prescription.advice }}</p>
+        </div>
+        {% endif %}
+
+        {% if prescription.follow_up_date %}
+        <div class="alert alert-info">
+            <strong>Follow-up Date:</strong> {{ prescription.follow_up_date|date:"l, d F Y" }}
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="footer">
+            <div>
+                <small class="text-muted">Generated on: {% now "d M Y, h:i A" %}</small>
+            </div>
+            <div class="signature-box">
+                <!-- <img src="{{ prescription.doctor.signature.url }}" height="50" alt="Signature"> -->
+                <div class="signature-line"></div>
+                <p class="mb-0 fw-bold">Dr. {{ prescription.doctor.name }}</p>
+                <small>Signature</small>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

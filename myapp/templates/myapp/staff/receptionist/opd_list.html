@@ -1,0 +1,85 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-5 d-flex align-items-center">
+            <h2 class="mb-0 text-gray-800">OPD Patient List</h2>
+        </div>
+        <div class="col-md-7 d-flex justify-content-end align-items-center">
+            <form method="GET" class="d-flex me-3" style="flex-grow: 1; max-width: 400px;">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search Name, ID, Doctor..."
+                        value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+                    {% if search_query %}
+                    <a href="{% url 'receptionist_opd_list' %}" class="btn btn-secondary" title="Clear Search"><i
+                            class="fas fa-times"></i></a>
+                    {% endif %}
+                </div>
+            </form>
+            <a href="{% url 'receptionist_opd_register' %}" class="btn btn-success text-nowrap">
+                <i class="fas fa-plus me-2"></i>New OPD Registration
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Token No</th>
+                            <th>Date & Time</th>
+                            <th>Patient</th>
+                            <th>Patient ID</th>
+                            <th>Doctor</th>
+                            <th>Department</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Fee</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ appointment.token_no }}</span></td>
+                            <td>{{ appointment.appointment_date|date:"M d, Y H:i" }}</td>
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.patient.patient_id }}</td>
+                            <td>{{ appointment.doctor.name }}</td>
+                            <td>{{ appointment.doctor.department }}</td>
+                            <td>{{ appointment.reason|default:"N/A"|truncatewords:5 }}</td>
+                            <td>
+                                {% if appointment.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif appointment.status == 'Pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% else %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>₹{{ appointment.fee }}</td>
+                            <td>
+                                <a href="{% url 'receptionist_opd_slip' appointment.id %}" class="btn btn-sm btn-info"
+                                    title="View Slip">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No OPD appointments found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

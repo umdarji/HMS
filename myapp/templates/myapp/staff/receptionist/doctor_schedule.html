@@ -1,0 +1,67 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0 text-info">Doctor Schedule & Availability</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Doctor Name</th>
+                                    <th>Department</th>
+                                    <th>Specialization</th>
+                                    <th>Status</th>
+                                    <th>Schedule (Weekly)</th>
+                                     <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doctor in doctors %}
+                                <tr>
+                                    <td class="fw-bold">Dr. {{ doctor.name }}</td>
+                                    <td>{{ doctor.department.name|default:"-" }}</td>
+                                    <td>{{ doctor.specialization }}</td>
+                                    <td>
+                                        <span
+                                            class="badge {% if doctor.availability_status == 'Available' %}bg-success{% elif doctor.availability_status == 'On Leave' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ doctor.availability_status }}
+                                        </span>
+                                    </td>
+                                    
+                                    <td>
+                                        {% for sched in doctor.schedules.all %}
+                                        <div><small><strong>{{ sched.day_of_week }}:</strong> {{
+                                                sched.start_time|time:"H:i" }} - {{ sched.end_time|time:"H:i" }}</small>
+                                        </div>
+                                        {% empty %}
+                                        <small class="text-muted">No specific schedule set</small>
+                                        {% endfor %}
+                                    </td>
+
+                                    <td>
+                                        <a href="{% url 'receptionist_update_doctor_status' doctor.id %}"
+                                            class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">No doctors found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}My Appointments{% endblock %}
+{% block header %}My Appointments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Appointment History</h5>
+    </div>
+    <div class="card-body">
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Doctor</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.appointment_date|date:"Y-m-d" }}</td>
+                        <td>{{ appointment.appointment_date|time:"H:i A" }}</td>
+                        <td>Dr. {{ appointment.doctor.name }}</td>
+                        <td>{{ appointment.doctor.department.name }}</td>
+                        <td>
+                            {% if appointment.status == 'Confirmed' %}
+                            <span class="badge bg-success">Confirmed</span>
+                            {% elif appointment.status == 'Pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif appointment.status == 'Completed' %}
+                            <span class="badge bg-info">Completed</span>
+                            {% elif appointment.status == 'Cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appointment.status == 'Pending' or appointment.status == 'Confirmed' %}
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                                data-bs-target="#cancelModal{{ appointment.id }}">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            {% elif appointment.status == 'Completed' %}
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#viewModal{{ appointment.id }}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- View Modal -->
+                    <div class="modal fade" id="viewModal{{ appointment.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Appointment Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Doctor</p>
+                                            <p class="fw-bold">Dr. {{ appointment.doctor.name }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Department</p>
+                                            <p class="fw-bold">{{ appointment.doctor.department.name }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Date</p>
+                                            <p class="fw-bold">{{ appointment.appointment_date|date:"M d, Y" }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Time</p>
+                                            <p class="fw-bold">{{ appointment.appointment_date|time:"H:i A" }}</p>
+                                        </div>
+                                        <div class="col-12">
+                                            <p class="small text-muted mb-1">Reason for Visit</p>
+                                            <p class="fw-bold">{{ appointment.reason|default:"No reason specified" }}
+                                            </p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Consultation Fee</p>
+                                            <p class="fw-bold text-success">₹{{ appointment.fee }}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p class="small text-muted mb-1">Status</p>
+                                            <span class="badge bg-info">Completed</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cancel Modal -->
+                    <div class="modal fade" id="cancelModal{{ appointment.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Cancel Appointment</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to cancel this appointment?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                                    <form method="POST" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="appointment_id" value="{{ appointment.id }}">
+                                        <button type="submit" class="btn btn-danger">Yes, Cancel</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-calendar-times fa-4x mb-3"></i>
+            <h5>No Appointments Found</h5>
+            <p>You haven't booked any appointments yet.</p>
+            <a href="{% url 'patient_book_appointment' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-calendar-plus me-2"></i>Book Your First Appointment
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .table thead th {
+        font-weight: 600;
+        color: #1e293b;
+        border-bottom-width: 1px;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody td {
+        vertical-align: middle;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

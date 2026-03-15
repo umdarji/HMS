@@ -1,0 +1,73 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-primary">All Appointments</h4>
+                    <a href="{% url 'receptionist_book_appt' %}" class="btn btn-primary"><i
+                            class="fas fa-plus-circle"></i> Book Appointment</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Visit Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in appointments %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.appointment_date|date:"d M Y" }}</div>
+                                        <div class="small text-muted">{{ appointment.appointment_date|time:"h:i A" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.patient.name }}</div>
+                                        <div class="small text-muted">ID: {{ appointment.patient.patient_id }}</div>
+                                    </td>
+                                    <td>Dr. {{ appointment.doctor.name }}</td>
+                                    <td>{{ appointment.visit_type }}</td>
+                                    <td>
+                                        {% if appointment.status == 'Completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                        {% elif appointment.status == 'Cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'receptionist_reschedule_appt' appointment.id %}"
+                                                class="btn btn-outline-info" title="Reschedule"><i
+                                                    class="fas fa-calendar-alt"></i></a>
+                                            <a href="{% url 'receptionist_cancel_appt' appointment.id %}"
+                                                class="btn btn-outline-danger" title="Cancel"><i
+                                                    class="fas fa-times"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">No appointments found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

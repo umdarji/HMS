@@ -1,0 +1,123 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}Patient Profile{% endblock %}
+{% block header %}Patient Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if patient.profile_image %}
+                    <img src="{{ patient.profile_image.url }}" alt="Profile" class="rounded-circle"
+                        style="width: 150px; height: 150px; object-fit: cover;" id="profile-preview">
+                    {% else %}
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto"
+                        style="width: 150px; height: 150px;" id="default-icon">
+                        <i class="fas fa-user fa-4x text-white"></i>
+                    </div>
+                    <img src="" alt="Profile" class="rounded-circle d-none"
+                        style="width: 150px; height: 150px; object-fit: cover;" id="profile-preview">
+                    {% endif %}
+                </div>
+                <h4>{{ patient.name }}</h4>
+                <p class="text-muted">{{ request.user.email }}</p>
+                <p class="text-muted mb-1"><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+                <p class="text-muted mb-1"><strong>Blood Group:</strong> {{ patient.blood_group|default:"N/A" }}</p>
+                <span class="badge bg-success">Active</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Profile Information</h5>
+
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-camera me-2"></i>Profile Picture</label>
+                        <input type="file" class="form-control" name="profile_image" id="profile-image-input"
+                            accept="image/*">
+                        <small class="text-muted">Recommended: Square image (JPG, PNG)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ patient.name }}" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control" name="age" value="{{ patient.age }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Blood Group</label>
+                            <select class="form-select" name="blood_group">
+                                <option value="">Select...</option>
+                                <option value="A+" >A+</option>
+                                <option value="A-" >A-</option>
+                                <option value="B+" >B+</option>
+                                <option value="B-" >B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+" >O+</option>
+                                <option value="O-" >O-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" name="phone" value="{{ patient.phone }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" name="email" value="{{ patient.email }}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Image preview functionality
+    document.getElementById('profile-image-input').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('profile-preview');
+                const defaultIcon = document.getElementById('default-icon');
+
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+
+                if (defaultIcon) {
+                    defaultIcon.classList.add('d-none');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+
+{% endblock %}
