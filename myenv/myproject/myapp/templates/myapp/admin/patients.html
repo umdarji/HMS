@@ -1,0 +1,277 @@
+{% extends 'myapp/admin/base.html' %}
+{% load static %}
+{% block title %}Patients Management{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">Patients</h2>
+</div>
+
+<!-- Alert Messages -->
+{% if success %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row my-2">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between mb-3">
+            <!-- <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                        <i class="fas fa-plus me-2"></i>Add New Patient
+                    </button> -->
+            <a href="{% url 'admin_patients_pdf' %}" class="btn btn-success">
+                <i class="fas fa-file-pdf me-2"></i>Generate PDF
+            </a>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">All Patients ({{ patients.count }})</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Blood Group</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if patients %}
+                            {% for patient in patients %}
+                            <tr>
+                                <td>{{ patient.patient_id }}</td>
+                                <td>{{ patient.name }}</td>
+                                <td>{{ patient.age }}</td>
+                                <td>{{ patient.gender }}</td>
+                                <td>{{ patient.phone }}</td>
+                                <td>{{ patient.blood_group|default:"N/A" }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-info" onclick="viewPatient({{ patient.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger"
+                                            onclick="confirmDelete({{ patient.id }}, '{{ patient.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No patients found. Add a new
+                                    patient to get started.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div class="modal fade" id="addPatientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Patient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'admin_add_patient' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" placeholder="John Doe" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Age <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="age" placeholder="30" min="1" max="150"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gender <span class="text-danger">*</span></label>
+                        <select class="form-select" name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" name="phone" placeholder="+1 234 567 8900" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" name="email" placeholder="patient@example.com"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Blood Group</label>
+                        <select class="form-select" name="blood_group">
+                            <option value="">Select Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" name="address" rows="2" placeholder="Full address"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Patient Modal -->
+<div class="modal fade" id="viewPatientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Patient Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Patient ID</label>
+                        <p class="fw-bold" id="view_patient_id">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Name</label>
+                        <p class="fw-bold" id="view_name">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Age</label>
+                        <p class="fw-bold" id="view_age">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Gender</label>
+                        <p class="fw-bold" id="view_gender">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Blood Group</label>
+                        <p class="fw-bold" id="view_blood_group">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Phone</label>
+                        <p class="fw-bold" id="view_phone">-</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="text-muted">Email</label>
+                        <p class="fw-bold" id="view_email">-</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="text-muted">Address</label>
+                        <p class="fw-bold" id="view_address">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">Emergency Contact</label>
+                        <p class="fw-bold" id="view_emergency_contact">-</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted">ID Proof</label>
+                        <p class="fw-bold" id="view_id_proof">-</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="text-muted">Registered On</label>
+                        <p class="fw-bold" id="view_created_at">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete patient <strong id="delete_patient_name"></strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete Patient</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // View patient details
+    function viewPatient(patientId) {
+        fetch(`/admin/patients/view/${patientId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                document.getElementById('view_patient_id').textContent = data.patient_id;
+                document.getElementById('view_name').textContent = data.name;
+                document.getElementById('view_age').textContent = data.age;
+                document.getElementById('view_gender').textContent = data.gender;
+                document.getElementById('view_blood_group').textContent = data.blood_group || 'N/A';
+                document.getElementById('view_phone').textContent = data.phone;
+                document.getElementById('view_email').textContent = data.email;
+                document.getElementById('view_address').textContent = data.address || 'N/A';
+                document.getElementById('view_emergency_contact').textContent = data.emergency_contact;
+                document.getElementById('view_id_proof').textContent = data.id_proof_number;
+                document.getElementById('view_created_at').textContent = data.created_at;
+
+                var modal = new bootstrap.Modal(document.getElementById('viewPatientModal'));
+                modal.show();
+            })
+            .catch(error => {
+                alert('Error loading patient details');
+                console.error(error);
+            });
+    }
+
+    // Confirm delete
+    function confirmDelete(patientId, patientName) {
+        document.getElementById('delete_patient_name').textContent = patientName;
+        document.getElementById('confirmDeleteBtn').href = `/admin/patients/delete/${patientId}/`;
+        var modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Finalize Discharge</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Are you sure you want to discharge <strong>{{ admission.patient.name }}</strong>?
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Patient Details</h5>
+                        <p class="mb-1"><strong>ID:</strong> {{ admission.patient.patient_id }}</p>
+                        <p class="mb-1"><strong>Admitted On:</strong> {{ admission.admission_date|date:"d M Y" }}</p>
+                        <p class="mb-1"><strong>Doctor:</strong> Dr. {{ admission.doctor.name }}</p>
+                        <p class="mb-1"><strong>Ward/Bed:</strong> {{ admission.ward_no }} / {{ admission.bed_no }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <p>This action will:</p>
+                        <ul>
+                            <li>Mark the patient as <strong>Discharged</strong>.</li>
+                            <li>Mark Bed <strong>{{ admission.bed_no }}</strong> as <strong>Available</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'receptionist_ipd_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Confirm Discharge</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

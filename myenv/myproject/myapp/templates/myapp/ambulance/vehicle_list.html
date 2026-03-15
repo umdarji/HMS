@@ -1,0 +1,54 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Ambulance Fleet</h1>
+        <a href="{% url 'add_ambulance' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add Vehicle
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Vehicle Number</th>
+                            <th>Type</th>
+                            <th>Driver</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for amb in ambulances %}
+                        <tr>
+                            <td>{{ amb.vehicle_number }}</td>
+                            <td>{{ amb.get_vehicle_type_display }}</td>
+                            <td>{{ amb.driver.name|default:"-" }}</td>
+                            <td>
+                                <span
+                                    class="badge {% if amb.status == 'Available' %}bg-success{% elif amb.status == 'Busy' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ amb.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'edit_ambulance' amb.id %}" class="btn btn-info btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No ambulances found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

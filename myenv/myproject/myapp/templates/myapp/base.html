@@ -1,0 +1,273 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hospital Management System{% endblock %} - SHC</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #4f46e5;
+            --sidebar-width: 240px;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --bg-light: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        #sidebar-wrapper {
+            height: 100vh;
+            width: var(--sidebar-width);
+            margin-left: 0;
+            transition: margin 0.25s ease-out;
+            background: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 24px 0 rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+        }
+
+        #sidebar-wrapper .sidebar-heading {
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .list-group-item {
+            border: none;
+            padding: 12px 25px;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .list-group-item:hover {
+            color: var(--primary-color);
+            background-color: #f8fafc;
+        }
+
+        .list-group-item.active {
+            background-color: #eef2ff;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        /* Content Wrapper */
+        #page-content-wrapper {
+            margin-left: var(--sidebar-width);
+            transition: margin 0.25s ease-out;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        /* Navbar */
+        .navbar {
+            padding: 1rem 1.5rem;
+            background: white;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .user-profile-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+        }
+
+        /* Toggled State */
+        .toggled #sidebar-wrapper {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        .toggled #page-content-wrapper {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+
+            #page-content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <i class="fas fa-heartbeat"></i> <span>Sanjeevan Health</span>
+            </div>
+            <div class="list-group list-group-flush my-3">
+
+                {% if request.user.user_type == 'admin' %}
+                <a href="{% url 'admin_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-th-large me-2"></i>Dashboard
+                </a>
+
+                <div class="mt-4 px-3 mb-2 text-muted uppercase" style="font-size: 0.75rem;">ADMINISTRATION</div>
+                <a href="{% url 'admin_patients' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-injured me-2"></i>Patients
+                </a>
+                <a href="{% url 'admin_doctors' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-md me-2"></i>Doctors
+                </a>
+
+                <div class="mt-4 px-3 mb-2 text-muted uppercase" style="font-size: 0.75rem;">PHARMACY</div>
+                <a href="{% url 'pharmacist_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clinic-medical me-2"></i>Pharmacy Dashboard
+                </a>
+                <a href="{% url 'medicine_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-pills me-2"></i>Medicines
+                </a>
+                <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-truck me-2"></i>Suppliers
+                </a>
+                <a href="{% url 'sales_report' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chart-line me-2"></i>Sales Report
+                </a>
+
+                <div class="mt-4 px-3 mb-2 text-muted uppercase" style="font-size: 0.75rem;">AMBULANCE</div>
+                <a href="{% url 'ambulance_dashboard' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-ambulance me-2"></i>Dashboard
+                </a>
+                <a href="{% url 'ambulance_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-truck-medical me-2"></i>Fleet
+                </a>
+                <a href="{% url 'booking_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-route me-2"></i>Trips
+                </a>
+
+                {% elif request.user.user_type == 'staff' and request.user.staff_profile.role == 'Pharmacist' %}
+                <a href="{% url 'pharmacist_dashboard' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-clinic-medical me-2"></i>Dashboard
+                </a>
+                <a href="{% url 'medicine_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-pills me-2"></i>Medicines
+                </a>
+                <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-truck me-2"></i>Suppliers
+                </a>
+                <a href="{% url 'pharmacy_billing' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Billing
+                </a>
+                <a href="{% url 'sales_report' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-chart-line me-2"></i>Reports
+                </a>
+                {% elif request.user.user_type == 'staff' and request.user.staff_profile.role == 'Driver' %}
+                <div class="mt-4 px-3 mb-2 text-muted uppercase" style="font-size: 0.75rem;">AMBULANCE</div>
+                <a href="{% url 'ambulance_dashboard' %}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-ambulance me-2"></i>Dashboard
+                </a>
+                <a href="{% url 'ambulance_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-truck-medical me-2"></i>Fleet
+                </a>
+                <a href="{% url 'booking_list' %}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-route me-2"></i>Trips
+                </a>
+                {% else %}
+                <!-- For other staff/users fallbacks -->
+                <a href="#" class="list-group-item list-group-item-action">Dashboard</a>
+                {% endif %}
+
+                <div class="mt-4 px-3 mb-2 text-muted uppercase" style="font-size: 0.75rem;">SYSTEM</div>
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+                <div class="container-fluid">
+                    <button class="btn" id="menu-toggle"><i class="fas fa-bars fs-5"></i></button>
+
+                    <div class="d-flex align-items-center ms-auto">
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#"
+                                id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="text-end d-none d-sm-block">
+                                    <div class="fw-bold text-dark small">
+                                        {{ request.user.username }}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        {{ request.user.user_type|title }}
+                                    </div>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
+                                <li><a class="dropdown-item py-2 text-danger" href="{% url 'logout' %}"><i
+                                            class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid px-4 py-4">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+
+        toggleButton.onclick = function () {
+            el.classList.toggle("toggled");
+        };
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

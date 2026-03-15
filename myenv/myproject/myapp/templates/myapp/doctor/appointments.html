@@ -1,0 +1,125 @@
+{% extends 'myapp/doctor/base.html' %}
+
+{% block title %}My Appointments{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">All Appointments</h2>
+    <button class="btn btn-primary"><i class="fas fa-plus me-2"></i>New Appointment</button>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4 border-bottom-0" id="apptTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active border-0 rounded-pill px-4 me-2 bg-white shadow-sm" id="upcoming-tab"
+            data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">Upcoming</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link border-0 rounded-pill px-4 bg-white shadow-sm" id="history-tab" data-bs-toggle="tab"
+            data-bs-target="#history" type="button" role="tab">History</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="apptTabsContent">
+    <!-- Upcoming Tab -->
+    <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Date & Time</th>
+                                <th>Patient</th>
+                                <th>Visit Type</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appt in appointments %}
+                            {% if appt.status == 'Pending' %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ appt.appointment_date|date:"M d, Y" }}</div>
+                                    <div class="text-muted small">{{ appt.appointment_date|date:"h:i A" }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ appt.patient.name }}</div>
+                                    <div class="small text-muted">{{ appt.patient.phone }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ appt.visit_type }}</span>
+                                </td>
+                                <td>{{ appt.reason|truncatechars:30 }}</td>
+                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                <td class="text-end pe-4">
+                                    <form method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="appointment_id" value="{{ appt.id }}">
+                                        <button type="submit" name="action" value="complete"
+                                            class="btn btn-sm btn-success me-1" title="Mark Completed">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="submit" name="action" value="cancel" class="btn btn-sm btn-danger"
+                                            title="Cancel"
+                                            onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-pane fade" id="history" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Date & Time</th>
+                                <th>Patient</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appt in appointments %}
+                            {% if appt.status != 'Pending' %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="text-dark">{{ appt.appointment_date|date:"M d, Y" }}</div>
+                                    <div class="text-muted small">{{ appt.appointment_date|date:"h:i A" }}</div>
+                                </td>
+                                <td>{{ appt.patient.name }}</td>
+                                <td>
+                                    <span class="text-muted">{{ appt.visit_type }}</span>
+                                </td>
+                                <td>
+                                    {% if appt.status == 'Completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

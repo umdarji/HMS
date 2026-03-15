@@ -1,0 +1,77 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Assign Ambulance</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Patient:</dt>
+                        <dd class="col-sm-8">{{ booking.patient_name }}</dd>
+
+                        <dt class="col-sm-4">Pickup:</dt>
+                        <dd class="col-sm-8">{{ booking.from_location }}</dd>
+
+                        <dt class="col-sm-4">Drop-off:</dt>
+                        <dd class="col-sm-8">{{ booking.to_location }}</dd>
+                    </dl>
+                    <hr>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Select Ambulance (Available)</label>
+                            <select name="ambulance" class="form-select" required onchange="updateDriver(this)">
+                                <option value="">-- Choose Vehicle --</option>
+                                {% for amb in ambulances %}
+                                <option value="{{ amb.id }}" data-driver="{{ amb.driver.name|default:'No Driver' }}">
+                                    {{ amb.vehicle_number }} ({{ amb.vehicle_type }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text mt-1">
+                                Assigned Driver: <strong id="assigned-driver">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Estimated Distance (km)</label>
+                            <input type="number" step="0.1" name="distance_km" id="distance" class="form-control"
+                                required oninput="calculateCost()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Total Cost (₹)</label>
+                            <input type="number" step="0.01" name="total_amount" id="cost" class="form-control"
+                                required>
+                            <small class="text-muted">Rate: ₹50/km base charge</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Confirm Assignment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateDriver(select) {
+        const driver = select.options[select.selectedIndex].getAttribute('data-driver');
+        document.getElementById('assigned-driver').innerText = driver;
+    }
+
+    function calculateCost() {
+        const km = parseFloat(document.getElementById('distance').value) || 0;
+        const rate = 50; // Simple rate logic
+        const base = 500; // Base fee
+        const total = base + (km * rate);
+        document.getElementById('cost').value = total.toFixed(2);
+    }
+</script>
+{% endblock %}

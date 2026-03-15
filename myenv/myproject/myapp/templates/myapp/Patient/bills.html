@@ -1,0 +1,207 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}My Bills{% endblock %}
+{% block header %}Billing & Payments{% endblock %}
+
+{% block content %}
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <h6 class="text-white-50 text-uppercase mb-2">Total Billed</h6>
+                <h3 class="mb-0 fw-bold">₹{{ total_billed|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <h6 class="text-white-50 text-uppercase mb-2">Total Paid</h6>
+                <h3 class="mb-0 fw-bold">₹{{ total_paid|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body text-center">
+                <h6 class="text-white-50 text-uppercase mb-2">Pending Due</h6>
+                <h3 class="mb-0 fw-bold">₹{{ total_pending|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Billing History</h5>
+        <div>
+            <span class="badge bg-soft-primary me-2"><i class="fas fa-circle small me-1"></i> OPD</span>
+            <span class="badge bg-soft-info"><i class="fas fa-circle small me-1"></i> IPD</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if bill_items %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in bill_items %}
+                    <tr>
+                        <td>{{ item.date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if item.type == 'OPD' %}
+                            <span class="badge bg-primary">OPD</span>
+                            {% else %}
+                            <span class="badge bg-info">IPD</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.description }}</td>
+                        <td class="fw-bold">₹{{ item.amount }}</td>
+                        <td>
+                            {% if item.status == 'Paid' %}
+                            <span class="badge bg-success rounded-pill"><i class="fas fa-check me-1"></i> Paid</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark rounded-pill"><i class="fas fa-clock me-1"></i>
+                                Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status == 'Pending' %}
+                            <button class="btn btn-sm btn-dark"
+                                onclick="initiatePayment('{{ item.amount }}', '{{ item.description }}', '{{ request.user.patient_profile.id }}')">
+                                <i class="fas fa-credit-card me-1"></i> Pay Now
+                            </button>
+                            {% else %}
+                            {% if item.payment_id %}
+                            <a href="{% url 'download_receipt' item.payment_id %}" target="_blank"
+                                class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-file-invoice"></i> Receipt
+                            </a>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                <i class="fas fa-file-invoice"></i> Receipt
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-file-invoice-dollar fa-4x mb-3 text-light"></i>
+            <h5>No Billing Records Found</h5>
+            <p>You don't have any outstanding or paid bills.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    function initiatePayment(amount, description, patientId) {
+        // Call backend to create order
+        fetch("{% url 'initiate_payment' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                'amount': amount
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                // DEBUGGING: Alert to verify values
+                // alert("Key: {{ RAZORPAY_KEY_ID }}\nOrder ID: " + data.id);
+
+                var options = {
+                    "key": "rzp_test_S7dpbztOktGIVm",
+                    "amount": data.amount,
+                    "currency": "INR",
+                    "name": "Hospital Management System",
+                    "description": description,
+                    "image": "/static/images/logo.png",
+                    "order_id": data.id,
+                    "handler": function (response) {
+                        // Verify payment on backend
+                        verifyPayment(response, amount, description, patientId);
+                    },
+                    "prefill": {
+                        "name": "{{ request.user.patient_profile.name }}",
+                        "email": "{{ request.user.email }}",
+                        "contact": "{{ request.user.patient_profile.phone }}"
+                    },
+                    "theme": {
+                        "color": "#3399cc"
+                    }
+                };
+                var rzp1 = new Razorpay(options);
+                rzp1.open();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Something went wrong!");
+            });
+    }
+
+    function verifyPayment(response, amount, description, patientId) {
+        fetch("{% url 'payment_success' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                'razorpay_payment_id': response.razorpay_payment_id,
+                'razorpay_order_id': response.razorpay_order_id,
+                'razorpay_signature': response.razorpay_signature,
+                'amount': amount,
+                'description': description,
+                'patient_id': patientId
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("Payment Successful!");
+                    location.reload();
+                } else {
+                    alert("Payment Verification Failed: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Payment Verification Failed!");
+            });
+    }
+</script>
+<style>
+    .bg-soft-primary {
+        background-color: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+
+    .bg-soft-info {
+        background-color: rgba(14, 165, 233, 0.1);
+        color: #0ea5e9;
+    }
+</style>
+{% endblock %}

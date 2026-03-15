@@ -1,0 +1,56 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0 text-primary">Reschedule Appointment</h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h5>Current Details</h5>
+                        <p class="mb-1"><strong>Patient:</strong> {{ appointment.patient.name }} (ID: {{
+                            appointment.patient.patient_id }})</p>
+                        <p class="mb-1"><strong>Doctor:</strong> Dr. {{ appointment.doctor.name }}</p>
+                        <p class="mb-1"><strong>Current Schedule:</strong> {{ appointment.appointment_date|date:"d M Y,
+                            h:i A" }}</p>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date" class="form-label">New Date</label>
+                                <input type="date" class="form-control" id="date" name="date" required
+                                    value="{{ appointment.appointment_date|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time" class="form-label">New Time</label>
+                                <input type="time" class="form-control" id="time" name="time" required
+                                    value="{{ appointment.appointment_date|time:'H:i' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Rescheduling (Optional)</label>
+                            <textarea class="form-control" id="reason" name="reason"
+                                rows="3">{{ appointment.reason }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'receptionist_appointments' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Appointment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

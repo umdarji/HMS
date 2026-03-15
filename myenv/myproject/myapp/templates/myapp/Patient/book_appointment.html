@@ -1,0 +1,114 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}Book Appointment{% endblock %}
+{% block header %}Book Appointment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Appointment Booking Form</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="department" class="form-label">Select Department</label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="" selected disabled>Choose department...</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="doctor" class="form-label">Select Doctor</label>
+                        <select class="form-select" id="doctor" name="doctor" required>
+                            <option value="" selected disabled>Choose doctor...</option>
+                            {% for doctor in doctors %}
+                            <option value="{{ doctor.id }}" data-dept="{{ doctor.department.id }}">
+                                Dr. {{ doctor.name }} - {{ doctor.specialization }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_date" class="form-label">Appointment Date</label>
+                            <input type="date" class="form-control" id="appointment_date" name="appointment_date"
+                                min="{{ today|date:'Y-m-d' }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="appointment_time" class="form-label">Appointment Time</label>
+                            <input type="time" class="form-control" id="appointment_time" name="appointment_time"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Visit</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4"
+                            placeholder="Describe your symptoms or reason for visit..." required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-calendar-check me-2"></i>Book Appointment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border-color: #e2e8f0;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        border-color: #6366f1;
+    }
+
+    .btn {
+        border-radius: 10px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+    }
+</style>
+
+<script>
+    // Filter doctors by department
+    document.getElementById('department').addEventListener('change', function () {
+        const deptId = this.value;
+        const doctorSelect = document.getElementById('doctor');
+        const options = doctorSelect.getElementsByTagName('option');
+
+        for (let i = 1; i < options.length; i++) {
+            const option = options[i];
+            if (option.getAttribute('data-dept') === deptId) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+
+        doctorSelect.value = '';
+    });
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('appointment_date').setAttribute('min', today);
+</script>
+{% endblock %}

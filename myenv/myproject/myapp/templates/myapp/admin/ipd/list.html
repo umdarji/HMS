@@ -1,0 +1,62 @@
+{% extends 'myapp/admin/base.html' %}
+{% block title %}IPD Admissions{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">IPD Admissions</h2>
+</div>
+<div class="row my-2">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">All IPD Admissions</h5>
+                {% if admissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Department</th>
+                                <th>Bed</th>
+                                <th>Admission Date</th>
+                                <th>Discharge Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for adm in admissions %}
+                            <tr>
+                                <td>{{ adm.patient.name }}</td>
+                                <td>{{ adm.doctor.name }}</td>
+                                <td>{{ adm.doctor.department }}</td>
+                                <td>Ward {{ adm.ward_no }} - Bed {{ adm.bed_no }}</td>
+                                <td>{{ adm.admission_date|date:"M d, Y" }}</td>
+                                <td>{{ adm.discharge_date|date:"M d, Y"|default:"N/A" }}</td>
+                                <td>{{ adm.reason|default:"N/A" }}</td>
+                                <td>
+                                    {% if adm.status == 'admitted' %}
+                                    <span class="badge bg-warning">Admitted</span>
+                                    {% elif adm.status == 'discharged' %}
+                                    <span class="badge bg-success">Discharged</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ adm.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No IPD admissions found.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

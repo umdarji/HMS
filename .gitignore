@@ -1,20 +1,33 @@
+# Virtual Environments
+.venv/
+env/
+venv/
+
+# Specific ignores for myenv (since it contains project code)
+myenv/Lib/
+myenv/Scripts/
+myenv/pyvenv.cfg
+myenv/CACHEDIR.TAG
+myenv/.gitignore
+
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 
+
+# Helper Files
+.vscode/
+.idea/
+
+# Database
+db.sqlite3
+*.sqlite3
+
 # Django
 *.log
 local_settings.py
-db.sqlite3
 media/
-
-# Virtual Environment
-venv/
-env/
-myenv/
-.env
-
-# IDEs
-.vscode/
-.idea/
+*_Export.zip
+*.zip

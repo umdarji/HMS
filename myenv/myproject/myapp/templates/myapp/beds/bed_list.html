@@ -1,0 +1,106 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0">Bed Management</h2>
+
+        {% if request.user.staff_profile.role == 'Receptionist' %}
+        <a href="{% url 'bed_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Add New Bed
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="ward_type" class="form-label fw-bold small text-muted">Ward Type</label>
+                    <select name="ward_type" id="ward_type" class="form-select">
+                        <option value="">All Wards</option>
+                        {% for code, name in ward_types %}
+                        <option value="{{ code }}" {% if selected_ward==code %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label fw-bold small text-muted">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for code, name in status_choices %}
+                        <option value="{{ code }}" {% if selected_status==code %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> Apply
+                    </button>
+                    <a href="{% url 'bed_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Ward Type</th>
+                            <th>Bed Number</th>
+                            <th>Daily Charge</th>
+                            <th>Status</th>
+                            {% if request.user.staff_profile.role == 'Receptionist' %}
+                            <th class="text-end pe-4">Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bed in beds %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-info text-dark">{{ bed.ward_type }}</span>
+                            </td>
+                            <td class="fw-bold">{{ bed.bed_number }}</td>
+                            <td>₹{{ bed.daily_charge }}</td>
+                            <td>
+                                {% if bed.status == 'Available' %}
+                                <span class="badge bg-success">Available</span>
+                                {% elif bed.status == 'Occupied' %}
+                                <span class="badge bg-danger">Occupied</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Maintenance</span>
+                                {% endif %}
+                            </td>
+                            {% if request.user.staff_profile.role == 'Receptionist' %}
+                            <td class="text-end pe-4">
+                                <a href="{% url 'bed_edit' bed.id %}" class="btn btn-sm btn-outline-primary me-2">
+                                    Edit
+                                </a>
+                                <a href="{% url 'bed_delete' bed.id %}" class="btn btn-sm btn-outline-danger">
+                                    Delete
+                                </a>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-bed fa-3x mb-3"></i>
+                                <p>No beds found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

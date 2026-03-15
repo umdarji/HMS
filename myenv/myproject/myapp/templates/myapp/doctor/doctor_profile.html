@@ -1,0 +1,82 @@
+﻿{% extends 'myapp/doctor/base.html' %}
+{% load static %}
+
+{% block title %}Doctor Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if doctor.profile_image %}
+                        <img src="{{ doctor.profile_image.url }}" alt="Profile" class="rounded-circle"
+                            style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto"
+                            style="width: 150px; height: 150px;">
+                            <i class="fas fa-user-md fa-4x text-secondary"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <h4>Dr. {{ doctor.name }}</h4>
+                    <p class="text-muted">{{ doctor.specialization }}</p>
+                    <p class="small text-muted">{{ doctor.doctor_id }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Edit Profile</h5>
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Profile Image</label>
+                            <input type="file" class="form-control" name="profile_image" accept="image/*">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" value="{{ doctor.name }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" value="{{ doctor.phone }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" name="email" value="{{ doctor.email }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Specialization (Read-only)</label>
+                            <input type="text" class="form-control" value="{{ doctor.specialization }}" readonly
+                                disabled>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends 'myapp/staff/staff_base.html' %}
+{% load static %}
+
+{% block title %}Laboratory Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold text-dark">Laboratory Dashboard</h2>
+        <p class="text-muted">Manage lab tests and reports</p>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card stat-card bg-white h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 text-uppercase fw-semibold" style="letter-spacing: 0.5px;">Pending
+                            Tests</h6>
+                        <h2 class="display-6 fw-bold text-dark mb-0">{{ pending_tests_count }}</h2>
+                    </div>
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card stat-card bg-white h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2 text-uppercase fw-semibold" style="letter-spacing: 0.5px;">Completed
+                            Today</h6>
+                        <h2 class="display-6 fw-bold text-dark mb-0">{{ completed_today }}</h2>
+                    </div>
+                    <div class="icon-box bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pending Tests Module -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">Pending Lab Tests</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTestModal">
+                    <i class="fas fa-plus me-1"></i> Add Test
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Patient</th>
+                                <th>Test Name</th>
+                                <th>Requested By</th>
+                                <th>Date</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in pending_tests %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-primary fw-bold me-3"
+                                            style="width: 35px; height: 35px;">
+                                            {{ report.patient.name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-dark">{{ report.patient.name }}</h6>
+                                            <small class="text-muted">{{ report.patient.patient_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ report.test_name }}</td>
+                                <td>Dr. {{ report.doctor.name }}</td>
+                                <td>{{ report.requested_date|date:"d M, Y" }}</td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#uploadModal{{ report.id }}">
+                                        <i class="fas fa-upload me-1"></i> Upload
+                                    </button>
+                                </td>
+                            </tr>
+
+
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fas fa-check-circle fs-1 mb-3 text-light"></i>
+                                    <p class="mb-0">No pending tests found.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Uploads -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <h5 class="fw-bold mb-0 text-dark">Recent Uploads</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for report in recent_uploads %}
+                    <div class="list-group-item px-4 py-3 border-light">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-light rounded p-2 text-primary">
+                                    <i class="fas fa-file-medical"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 text-dark">{{ report.test_name }}</h6>
+                                <p class="mb-0 small text-muted">
+                                    {{ report.patient.name }} • {{ report.status }}
+                                </p>
+                            </div>
+                            <div class="ms-2">
+                                {% if report.report_file %}
+                                <a href="{{ report.report_file.url }}" target="_blank"
+                                    class="btn btn-light btn-sm rounded-circle shadow-sm"
+                                    style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-download text-muted"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted">
+                        <p class="mb-0">No recent uploads.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% for report in pending_tests %}
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal{{ report.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Upload Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <form action="{% url 'laboratory_upload_report' report.id %}" method="POST"
+                    enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Patient</label>
+                        <input type="text" class="form-control bg-light" value="{{ report.patient.name }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Test Name</label>
+                        <input type="text" class="form-control bg-light" value="{{ report.test_name }}" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Report File
+                            (PDF/Image)</label>
+                        <input type="file" name="report_file" class="form-control" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Remarks
+                            (Optional)</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Start typing..."></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary py-2 rounded-3 fw-bold">Upload
+                            Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Test Modal -->
+<div class="modal fade" id="addTestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Request New Lab Test</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-4">
+                <form action="{% url 'laboratory_add_test' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Select Patient</label>
+                        <select name="patient" class="form-select" required>
+                            <option value="" selected disabled>Choose Patient...</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}">{{ patient.name }} ({{ patient.patient_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Prescribing Doctor</label>
+                        <select name="doctor" class="form-select" required>
+                            <option value="" selected disabled>Choose Doctor...</option>
+                            {% for doctor in doctors %}
+                            <option value="{{ doctor.id }}">Dr. {{ doctor.name }} ({{ doctor.specialization }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Test Name</label>
+                        <input type="text" name="test_name" class="form-control" placeholder="e.g. CBC, Lipid Profile"
+                            required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary py-2 rounded-3 fw-bold">Create Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

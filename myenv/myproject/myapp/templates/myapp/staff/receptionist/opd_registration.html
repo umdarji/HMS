@@ -1,0 +1,113 @@
+{% extends 'myapp/staff/staff_base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">New OPD Registration</h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Patient Selection -->
+                            <div class="col-12">
+                                <label for="patient" class="form-label">Select Patient</label>
+                                <select class="form-select" id="patient" name="patient" required>
+                                    <option value="" selected disabled>Choose patient...</option>
+                                    {% for patient in patients %}
+                                    <option value="{{ patient.id }}">{{ patient.patient_id }} - {{ patient.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Not in list? <a href="{% url 'receptionist_add_patient' %}" target="_blank">Register
+                                        New Patient</a> first.
+                                </div>
+                            </div>
+
+                            <!-- Doctor Selection -->
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-select" id="department" name="department">
+                                    <option value="" selected disabled>Filter by Department</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="doctor" class="form-label">Doctor <span class="text-danger">*</span></label>
+                                <select class="form-select" id="doctor" name="doctor" required>
+                                    <option value="" selected disabled>Select Doctor...</option>
+                                    {% for doctor in doctors %}
+                                    <option value="{{ doctor.id }}" data-dept="{{ doctor.department.id }}">
+                                        {{doctor.name }} ({{ doctor.department.name }})</option>
+                                    {% endfor %}
+
+                                </select>
+                            </div>
+
+                            <!-- Visit Details -->
+                            <div class="col-md-6">
+                                <label for="visit_type" class="form-label">Visit Type</label>
+                                <select class="form-select" id="visit_type" name="visit_type">
+                                    <option value="New" selected>New Consultation</option>
+                                    <option value="Follow-up">Follow-up</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="fee" class="form-label">Consultation Fee</label>
+                                <input type="number" class="form-control" id="fee" name="fee" value="500">
+                            </div>
+
+                            <div class="col-12">
+                                <label for="reason" class="form-label">Symptoms / Reason</label>
+                                <textarea class="form-control" id="reason" name="reason" rows="2"
+                                    placeholder="Brief description of symptoms"></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'receptionist_dashboard' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-success">Generate Token</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple script to filter doctors by department
+    document.getElementById('department').addEventListener('change', function () {
+        var deptId = this.value;
+        var doctorSelect = document.getElementById('doctor');
+        var options = doctorSelect.options;
+
+        for (var i = 0; i < options.length; i++) {
+            var option = options[i];
+            if (option.value === "") continue; // Skip placeholder
+
+            var docDept = option.getAttribute('data-dept');
+            if (!deptId || docDept == deptId) {
+                option.style.display = "";
+            } else {
+                option.style.display = "none";
+            }
+        }
+        doctorSelect.value = ""; // Reset selection
+    });
+</script>
+{% endblock %}

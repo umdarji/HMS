@@ -2,11 +2,11 @@
 # exit on error
 set -o errexit
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies from the nested requirements file
+pip install -r myenv/myproject/requirements.txt
 
-# Run collectstatic
-python manage.py collectstatic --no-input
+# Run collectstatic from the nested project directory
+python myenv/myproject/manage.py collectstatic --no-input
 
-# Run migrations
-python manage.py migrate
+# Run migrations from the nested project directory
+python myenv/myproject/manage.py migrate

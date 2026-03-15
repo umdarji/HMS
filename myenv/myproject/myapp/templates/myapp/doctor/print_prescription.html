@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription - {{ p.patient.name }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .doctor-info {
+            float: right;
+            text-align: right;
+        }
+
+        .patient-info {
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: right;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body onload="window.print()">
+
+    <div class="header">
+        <h1>Sanjeevan Health Care</h1>
+        <p>123, Health Avenue, City Center</p>
+    </div>
+
+    <div class="doctor-info">
+        <h3>Dr. {{ p.doctor.name }}</h3>
+        <p>{{ p.doctor.specialization }}</p>
+        <p>{{ p.doctor.department.name }}</p>
+    </div>
+
+    <div class="patient-info">
+        <p><strong>Patient Name:</strong> {{ p.patient.name }}</p>
+        <p><strong>Patient ID:</strong> {{ p.patient.patient_id }}</p>
+        <p><strong>Age/Gender:</strong> {{ p.patient.age }} / {{ p.patient.gender }}</p>
+        <p><strong>Date:</strong> {{ p.created_at|date:"d M Y" }}</p>
+    </div>
+
+    <div style="clear: both;"></div>
+    <hr>
+
+    <div class="section">
+        <h3>Diagnosis</h3>
+        <p>{{ p.diagnosis|linebreaks }}</p>
+    </div>
+
+    <div class="section">
+        <h3>Medicines (Rx)</h3>
+        <pre style="font-family: inherit; white-space: pre-wrap;">{{ p.medicines }}</pre>
+    </div>
+
+    {% if p.advice %}
+    <div class="section">
+        <h3>Advice</h3>
+        <p>{{ p.advice|linebreaks }}</p>
+    </div>
+    {% endif %}
+
+    {% if p.follow_up_date %}
+    <div class="section">
+        <h3>Follow Up</h3>
+        <p>Please visit again on: <strong>{{ p.follow_up_date|date:"d M Y" }}</strong></p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <br><br>
+        <p>Doctor's Signature</p>
+    </div>
+
+    <div class="no-print" style="text-align: center; margin-top: 50px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Prescription</button>
+    </div>
+
+</body>
+
+</html>

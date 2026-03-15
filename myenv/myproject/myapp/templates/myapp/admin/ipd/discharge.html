@@ -1,0 +1,23 @@
+{% extends 'myapp/admin/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">Confirm Discharge</h2>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3>Discharge Patient: {{ admission.patient.name }}</h3>
+                <p><strong>Admission Date:</strong> {{ admission.admission_date }}</p>
+                <p><strong>Doctor:</strong> {{ admission.doctor.name }}</p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <p class="text-danger">Are you sure you want to discharge this patient?</p>
+                    <button type="submit" class="btn btn-danger">Confirm Discharge</button>
+                    <a href="{% url 'ipd_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

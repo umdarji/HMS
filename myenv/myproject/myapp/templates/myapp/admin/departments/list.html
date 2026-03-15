@@ -1,0 +1,44 @@
+{% extends 'myapp/admin/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">Departments</h2>
+    <a href="{% url 'add_department' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add Department
+    </a>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="row my-2">
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dept in departments %}
+                                <tr>
+                                    <td>{{ dept.name }}</td>
+                                    <td>{{ dept.description }}</td>
+                                    <td>
+                                        <a href="{% url 'edit_department' dept.id %}" class="btn btn-sm btn-warning"><i
+                                                class="fas fa-edit"></i></a>
+                                        <a href="{% url 'delete_department' dept.id %}" class="btn btn-sm btn-danger"><i
+                                                class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

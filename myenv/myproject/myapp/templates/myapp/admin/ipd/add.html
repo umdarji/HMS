@@ -1,0 +1,53 @@
+{% extends 'myapp/admin/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">New IPD Admission</h2>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Patient</label>
+                            <select name="patient" class="form-select" required>
+                                <option value="">Select Patient</option>
+                                {% for p in patients %}
+                                <option value="{{ p.id }}">{{ p.patient_id }} - {{ p.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Doctor</label>
+                            <select name="doctor" class="form-select" required>
+                                <option value="">Select Doctor</option>
+                                {% for d in doctors %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ward No</label>
+                            <input type="text" name="ward_no" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Bed No</label>
+                            <input type="text" name="bed_no" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea name="reason" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Admit Patient</button>
+                    <a href="{% url 'ipd_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends 'myapp/admin/base.html' %}
+{% load static %}
+{% block title %}Doctors Management{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-1">Doctors</h2>
+</div>
+<!-- Success/Error Messages -->
+{% if success %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row my-2">
+    <div class="col-md-12">
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addDoctorModal">
+            <i class="fas fa-plus me-2"></i>Add New Doctor
+        </button>
+        <a href="{% url 'admin_doctors_pdf' %}" class="btn btn-danger mb-3 ms-2" target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Export to PDF
+        </a>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">All Doctors ({{ doctors.count }})</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Specialization</th>
+                                <th>Department</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if doctors %}
+                            {% for doctor in doctors %}
+                            <tr>
+                                <td>{{ doctor.doctor_id }}</td>
+                                <td>{{ doctor.name }}</td>
+                                <td>{{ doctor.specialization }}</td>
+                                <td>{{ doctor.department.name|default:"N/A" }}</td>
+                                <td>{{ doctor.phone }}</td>
+                                <td>{{ doctor.email }}</td>
+                                <td>
+                                    {% if doctor.availability_status == 'Available' %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% elif doctor.availability_status == 'On Leave' %}
+                                    <span class="badge bg-warning">On Leave</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Emergency</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-info" onclick="viewDoctor({{ doctor.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <a href="{% url 'admin_edit_doctor' doctor.id %}"
+                                            class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger"
+                                            onclick="confirmDelete({{ doctor.id }}, '{{ doctor.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">No doctors found. Add a new doctor to get
+                                    started.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="addDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Doctor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'admin_add_doctor' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">First Name *</label>
+                            <input type="text" name="first_name" class="form-control" placeholder="John" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Last Name *</label>
+                            <input type="text" name="last_name" class="form-control" placeholder="Doe" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specialization *</label>
+                        <input type="text" name="specialization" class="form-control" placeholder="Cardiology" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone *</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="+1 234 567 8900" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" class="form-control" placeholder="doctor@hospital.com"
+                            required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Doctor Modal -->
+<div class="modal fade" id="editDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Doctor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editDoctorForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specialization *</label>
+                        <input type="text" name="specialization" id="edit_specialization" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" id="edit_department" class="form-select">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone *</label>
+                        <input type="tel" name="phone" id="edit_phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" id="edit_email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Availability Status</label>
+                        <select name="availability_status" id="edit_availability" class="form-select">
+                            <option value="Available">Available</option>
+                            <option value="On Leave">On Leave</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Doctor Modal -->
+<div class="modal fade" id="viewDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Doctor Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Doctor ID:</th>
+                        <td id="view_doctor_id"></td>
+                    </tr>
+                    <tr>
+                        <th>Name:</th>
+                        <td id="view_name"></td>
+                    </tr>
+                    <tr>
+                        <th>Specialization:</th>
+                        <td id="view_specialization"></td>
+                    </tr>
+                    <tr>
+                        <th>Department:</th>
+                        <td id="view_department"></td>
+                    </tr>
+                    <tr>
+                        <th>Phone:</th>
+                        <td id="view_phone"></td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td id="view_email"></td>
+                    </tr>
+                    <tr>
+                        <th>Availability:</th>
+                        <td id="view_availability"></td>
+                    </tr>
+                    <tr>
+                        <th>Created At:</th>
+                        <td id="view_created"></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete_doctor_name"></strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteDoctorForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Edit Doctor
+    function editDoctor(id, name, specialization, phone, email, departmentId, availability) {
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_specialization').value = specialization;
+        document.getElementById('edit_phone').value = phone;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_department').value = departmentId;
+        document.getElementById('edit_availability').value = availability;
+        document.getElementById('editDoctorForm').action = `/admin/doctors/edit/${id}/`;
+        new bootstrap.Modal(document.getElementById('editDoctorModal')).show();
+    }
+
+    // View Doctor
+    function viewDoctor(id) {
+        fetch(`/admin/doctors/view/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('view_doctor_id').textContent = data.doctor_id;
+                document.getElementById('view_name').textContent = data.name;
+                document.getElementById('view_specialization').textContent = data.specialization;
+                document.getElementById('view_department').textContent = data.department;
+                document.getElementById('view_phone').textContent = data.phone;
+                document.getElementById('view_email').textContent = data.email;
+                document.getElementById('view_availability').textContent = data.availability_status;
+                document.getElementById('view_created').textContent = data.created_at;
+                new bootstrap.Modal(document.getElementById('viewDoctorModal')).show();
+            })
+            .catch(error => {
+                alert('Error loading doctor details');
+                console.error('Error:', error);
+            });
+    }
+
+    // Delete Doctor
+    function confirmDelete(id, name) {
+        document.getElementById('delete_doctor_name').textContent = name;
+        document.getElementById('deleteDoctorForm').action = `/admin/doctors/delete/${id}/`;
+        new bootstrap.Modal(document.getElementById('deleteDoctorModal')).show();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends 'myapp/patient/base.html' %}
+{% block title %}Patient Dashboard{% endblock %}
+{% block header %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="card stat-card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2">Total Appointments</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_appointments }}</h2>
+                    </div>
+                    <div class="icon-box bg-white bg-opacity-25">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2">Upcoming</h6>
+                        <h2 class="mb-0 fw-bold">{{ upcoming_appointments|length }}</h2>
+                    </div>
+                    <div class="icon-box bg-white bg-opacity-25">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2">Total Bills</h6>
+                        <h2 class="mb-0 fw-bold">{{ pending_payments }}</h2>
+                    </div>
+                    <div class="icon-box bg-white bg-opacity-25">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card stat-card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-2">Prescriptions</h6>
+                        <h2 class="mb-0 fw-bold">{{ recent_prescriptions|length }}</h2>
+                    </div>
+                    <div class="icon-box bg-white bg-opacity-25">
+                        <i class="fas fa-prescription-bottle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Quick Actions</h5>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <a href="{% url 'patient_book_appointment' %}" class="btn btn-primary w-100 btn-lg">
+                            <i class="fas fa-calendar-plus me-2"></i>Book Appointment
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'patient_appointments' %}" class="btn btn-outline-primary w-100 btn-lg">
+                            <i class="fas fa-calendar-check me-2"></i>My Appointments
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'patient_prescriptions' %}" class="btn btn-outline-primary w-100 btn-lg">
+                            <i class="fas fa-prescription-bottle me-2"></i>Prescriptions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Appointments -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Upcoming Appointments</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Doctor</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in upcoming_appointments %}
+                            <tr>
+                                <td>{{ appointment.appointment_date|date:"Y-m-d" }}</td>
+                                <td>{{ appointment.appointment_date|time:"H:i" }}</td>
+                                <td>{{ appointment.doctor.name }}</td>
+                                <td>{{ appointment.doctor.department.name }}</td>
+                                <td><span class="badge bg-success">{{ appointment.status }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                    <p>No upcoming appointments</p>
+                    <a href="{% url 'patient_book_appointment' %}" class="btn btn-primary">Book Now</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Prescriptions -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent Prescriptions</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_prescriptions %}
+                <div class="list-group list-group-flush">
+                    {% for prescription in recent_prescriptions %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Dr. {{ prescription.doctor.name }}</h6>
+                                <small class="text-muted">{{ prescription.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <a href="{% url 'patient_prescriptions' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-prescription-bottle fa-2x mb-2"></i>
+                    <p class="small mb-0">No prescriptions yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        overflow: hidden;
+        position: relative;
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    }
+
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+    }
+</style>
+{% endblock %}
