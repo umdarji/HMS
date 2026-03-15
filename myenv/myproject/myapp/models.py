@@ -94,6 +94,8 @@ class Staff(models.Model):
     ROLE_CHOICES = (
         ('Receptionist', 'Receptionist'),
         ('Lab Technician', 'Lab Technician'),
+        ('Pharmacist', 'Pharmacist'),
+        ('Driver', 'Driver'),
     )
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='staff_profile', null=True, blank=True)
     staff_id = models.CharField(max_length=10, unique=True)
@@ -354,3 +356,137 @@ class DischargeSummary(models.Model):
 
     def __str__(self):
         return f"Discharge Summary - {self.patient.name}"
+
+# ============ PHARMACY MANAGEMENT MODELS ============
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=200)
+    contact_person = models.CharField(max_length=200)
+    phone = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Medicine(models.Model):
+    name = models.CharField(max_length=200)
+    manufacturer = models.CharField(max_length=200)
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    batch_number = models.CharField(max_length=100)
+    expiry_date = models.DateField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock_quantity = models.IntegerField(default=0)
+    min_stock_alert = models.IntegerField(default=10)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} (Batch: {self.batch_number})"
+    
+    @property
+    def is_expired(self):
+        return self.expiry_date < timezone.now().date()
+    
+    @property
+    def is_low_stock(self):
+        return self.stock_quantity <= self.min_stock_alert
+
+class PharmacyBill(models.Model):
+    bill_number = models.CharField(max_length=20, unique=True)
+    patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
+    # If patient is not registered (walk-in), store name/phone
+    patient_name = models.CharField(max_length=200, blank=True, null=True)
+    patient_phone = models.CharField(max_length=15, blank=True, null=True)
+    
+    pharmacist = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, related_name='bills_generated')
+    prescription = models.ForeignKey(Prescription, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    payment_method = models.CharField(max_length=20, choices=[('Cash', 'Cash'), ('Card', 'Card'), ('UPI', 'UPI')], default='Cash')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Bill #{self.bill_number}"
+
+    @staticmethod
+    def generate_bill_number():
+        # format: PH-YYYYMMDD-XXXX
+        today_str = timezone.now().strftime('%Y%m%d')
+        last_bill = PharmacyBill.objects.filter(bill_number__startswith=f"PH-{today_str}").order_by('id').last()
+        if last_bill:
+            last_seq = int(last_bill.bill_number.split('-')[-1])
+            new_seq = last_seq + 1
+        else:
+            new_seq = 1
+        return f"PH-{today_str}-{new_seq:04d}"
+
+    def save(self, *args, **kwargs):
+        if not self.bill_number:
+            self.bill_number = self.generate_bill_number()
+        super().save(*args, **kwargs)
+
+class PharmacyBillItem(models.Model):
+    bill = models.ForeignKey(PharmacyBill, on_delete=models.CASCADE, related_name='items')
+    medicine = models.ForeignKey(Medicine, on_delete=models.SET_NULL, null=True)
+    quantity = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2) # Price at time of sale
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.total_price = self.price * self.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.medicine.name} x {self.quantity}"
+
+# ============ AMBULANCE MANAGEMENT MODELS ============
+
+class Ambulance(models.Model):
+    VEHICLE_TYPE_CHOICES = (
+        ('Basic', 'Basic Life Support (BLS)'),
+        ('ICU', 'Advanced Life Support (ICU)'),
+        ('Oxygen', 'Patient Transport (Oxygen)'),
+    )
+    STATUS_CHOICES = (
+        ('Available', 'Available'),
+        ('Busy', 'Busy'),
+        ('Maintenance', 'Maintenance'),
+    )
+    
+    vehicle_number = models.CharField(max_length=20, unique=True)
+    vehicle_type = models.CharField(max_length=20, choices=VEHICLE_TYPE_CHOICES)
+    # Using 'limit_choices_to' to only show staff with role 'Driver'
+    driver = models.OneToOneField(Staff, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_ambulance', limit_choices_to={'role': 'Driver'})
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vehicle_number} ({self.vehicle_type})"
+
+class AmbulanceBooking(models.Model):
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Confirmed', 'Confirmed'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    )
+    
+    patient_name = models.CharField(max_length=200)
+    contact_phone = models.CharField(max_length=15)
+    ambulance = models.ForeignKey(Ambulance, on_delete=models.SET_NULL, null=True, blank=True)
+    driver = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True, related_name='ambulance_trips')
+    
+    from_location = models.CharField(max_length=255)
+    to_location = models.CharField(max_length=255)
+    distance_km = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    
+    request_date = models.DateTimeField(auto_now_add=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Booking {self.id} - {self.patient_name}"

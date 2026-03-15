@@ -87,10 +87,10 @@ def create_otp(user):
     otp = OTP.objects.create(user=user, otp_code=otp_code)
     
     # Send OTP via Email and SMS
-    send_otp_email(user, otp_code)
+    email_sent = send_otp_email(user, otp_code)
     # send_otp_sms(user, otp_code) # SMS disabled per user request
     
-    return otp
+    return otp, email_sent
 
 def verify_otp(user, otp_code):
     """Verify OTP for user"""

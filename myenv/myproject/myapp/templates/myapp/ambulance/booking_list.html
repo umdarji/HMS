@@ -1,0 +1,78 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Trip History & Bookings</h1>
+        <a href="{% url 'create_booking' %}" class="btn btn-danger">
+            <i class="fas fa-plus me-2"></i>New Request
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Route</th>
+                            <th>Ambulance</th>
+                            <th>Driver</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.request_date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <strong>{{ booking.patient_name }}</strong><br>
+                                <small>{{ booking.contact_phone }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ booking.from_location }}</span>
+                                <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                <span class="badge bg-light text-dark border">{{ booking.to_location }}</span>
+                            </td>
+                            <td>{{ booking.ambulance.vehicle_number|default:"-" }}</td>
+                            <td>{{ booking.driver.name|default:"-" }}</td>
+                            <td>₹{{ booking.total_amount }}</td>
+                            <td>
+                                {% if booking.status == 'Pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif booking.status == 'Confirmed' %}
+                                <span class="badge bg-info">On Route</span>
+                                {% elif booking.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if booking.status == 'Pending' %}
+                                <a href="{% url 'assess_booking' booking.id %}"
+                                    class="btn btn-primary btn-sm">Assign</a>
+                                {% elif booking.status == 'Confirmed' %}
+                                <a href="{% url 'complete_booking' booking.id %}" class="btn btn-success btn-sm"
+                                    onclick="return confirm('Complete this trip and free up the ambulance?');">
+                                    Complete
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No bookings found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -62,8 +62,6 @@ urlpatterns = [
     path('admin/payments/', views.payment_list, name="payment_list"),
     path('admin/payments/add/', views.add_payment, name="add_payment"),
     
-    path('admin/payments/add/', views.add_payment, name="add_payment"),
-    
     # Staff URLs
     path('staff-dashboard/', views.staff_dashboard, name="staff_dashboard"),
 
@@ -124,6 +122,26 @@ urlpatterns = [
     path('patient/receipt/<int:payment_id>/', views.download_receipt, name="download_receipt"),
     path('patient/profile/', views.patient_profile, name="patient_profile"),
     
+    # ============ PHARMACY URLS ============
+    path('pharmacy/dashboard/', views.pharmacist_dashboard, name='pharmacist_dashboard'),
+    
+    # Supplier Management
+    path('pharmacy/suppliers/', views.supplier_list, name='supplier_list'),
+    path('pharmacy/suppliers/add/', views.add_supplier, name='add_supplier'),
+    path('pharmacy/suppliers/edit/<int:id>/', views.edit_supplier, name='edit_supplier'),
+    path('pharmacy/suppliers/delete/<int:id>/', views.delete_supplier, name='delete_supplier'),
+    
+    # Medicine Management
+    path('pharmacy/medicines/', views.medicine_list, name='medicine_list'),
+    path('pharmacy/medicines/add/', views.add_medicine, name='add_medicine'),
+    path('pharmacy/medicines/edit/<int:id>/', views.edit_medicine, name='edit_medicine'),
+    path('pharmacy/medicines/delete/<int:id>/', views.delete_medicine, name='delete_medicine'),
+    
+    # Billing & Reports
+    path('pharmacy/billing/', views.pharmacy_billing, name='pharmacy_billing'),
+    path('pharmacy/bill/receipt/<int:bill_id>/', views.bill_receipt, name='bill_receipt'),
+    path('pharmacy/reports/sales/', views.sales_report, name='sales_report'),
+
     # Payment URLs
     path('payment/initiate/', views.initiate_payment, name='initiate_payment'),
     path('payment/success/', views.payment_success, name='payment_success'),
@@ -133,4 +151,14 @@ urlpatterns = [
     path('beds/add/', views.bed_add, name='bed_add'),
     path('beds/edit/<int:id>/', views.bed_edit, name='bed_edit'),
     path('beds/delete/<int:id>/', views.bed_delete, name='bed_delete'),
+
+    # ============ AMBULANCE URLS ============
+    path('ambulance/dashboard/', views.ambulance_dashboard, name='ambulance_dashboard'),
+    path('ambulance/list/', views.ambulance_list, name='ambulance_list'),
+    path('ambulance/add/', views.add_ambulance, name='add_ambulance'),
+    path('ambulance/edit/<int:id>/', views.edit_ambulance, name='edit_ambulance'),
+    path('ambulance/bookings/new/', views.create_booking, name='create_booking'),
+    path('ambulance/bookings/', views.booking_list, name='booking_list'),
+    path('ambulance/bookings/assign/<int:id>/', views.assess_booking, name='assess_booking'),
+    path('ambulance/bookings/complete/<int:id>/', views.complete_booking, name='complete_booking'),
 ]

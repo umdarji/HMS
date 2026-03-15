@@ -1,0 +1,163 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">New Bill</h1>
+        <a href="{% url 'pharmacist_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Billing Form -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Bill Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="billingForm">
+                        {% csrf_token %}
+                        <!-- Patient Info -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Patient Name</label>
+                                <input type="text" name="patient_name" class="form-control" required
+                                    placeholder="Walk-in or Registered">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="patient_phone" class="form-control" placeholder="Optional">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Method</label>
+                                <select name="payment_method" class="form-select">
+                                    <option value="Cash">Cash</option>
+                                    <option value="Card">Card</option>
+                                    <option value="UPI">UPI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Medicine Selection -->
+                        <h6 class="font-weight-bold mb-3">Medicines</h6>
+                        <div id="medicine-rows">
+                            <div class="row mb-2 medicine-row">
+                                <div class="col-md-6">
+                                    <select name="medicine_id[]" class="form-select medicine-select"
+                                        onchange="updatePrice(this)">
+                                        <option value="" data-price="0">Select Medicine</option>
+                                        {% for med in medicines %}
+                                        <option value="{{ med.id }}" data-price="{{ med.price }}"
+                                            data-stock="{{ med.stock_quantity }}">
+                                            {{ med.name }} - ₹{{ med.price }} (Stock: {{ med.stock_quantity }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" name="quantity[]" class="form-control quantity-input"
+                                        placeholder="Qty" min="1" onchange="updateTotal()">
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="row-total">₹0.00</span>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                        onclick="removeRow(this)">X</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-info btn-sm mt-2" onclick="addRow()">+ Add
+                            Medicine</button>
+
+                        <div class="d-flex justify-content-end align-items-center mt-4">
+                            <h4 class="me-3">Total: <span id="grand-total">₹0.00</span></h4>
+                            <button type="submit" class="btn btn-success btn-lg">Generate Bill</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions / Recent -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-info text-white">
+                    <h6 class="m-0 font-weight-bold">Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <p>1. Enter patient details (manual or search pending).</p>
+                    <p>2. Select medicines from the list. Verify stock availability.</p>
+                    <p>3. Enter quantity. Total is calculated automatically.</p>
+                    <p>4. Select payment method and Click 'Generate Bill'.</p>
+                    <hr>
+                    <small class="text-muted">Stock is deducted immediately upon bill generation.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addRow() {
+        const row = document.querySelector('.medicine-row').cloneNode(true);
+        row.querySelector('.quantity-input').value = '';
+        row.querySelector('.row-total').innerText = '₹0.00';
+        row.querySelector('.medicine-select').value = '';
+        document.getElementById('medicine-rows').appendChild(row);
+    }
+
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.medicine-row');
+        if (rows.length > 1) {
+            btn.closest('.medicine-row').remove();
+            updateTotal();
+        }
+    }
+
+    function updatePrice(select) {
+        const row = select.closest('.medicine-row');
+        const price = select.options[select.selectedIndex].getAttribute('data-price');
+        const stock = select.options[select.selectedIndex].getAttribute('data-stock');
+
+        // Simple stock validation alert
+        if (parseInt(stock) <= 0) {
+            alert("Warning: This medicine is out of stock!");
+        }
+
+        updateRowTotal(row);
+    }
+
+    function updateRowTotal(row) {
+        const select = row.querySelector('.medicine-select');
+        const qtyInput = row.querySelector('.quantity-input');
+        const price = parseFloat(select.options[select.selectedIndex]?.getAttribute('data-price') || 0);
+        const qty = parseInt(qtyInput.value || 0);
+
+        const total = price * qty;
+        row.querySelector('.row-total').innerText = '₹' + total.toFixed(2);
+        updateTotal();
+    }
+
+    // Attach event listeners for dynamic rows
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('quantity-input')) {
+            updateRowTotal(e.target.closest('.medicine-row'));
+        }
+    });
+
+    function updateTotal() {
+        let grandTotal = 0;
+        document.querySelectorAll('.medicine-row').forEach(row => {
+            const text = row.querySelector('.row-total').innerText.replace('₹', '');
+            grandTotal += parseFloat(text);
+        });
+        document.getElementById('grand-total').innerText = '₹' + grandTotal.toFixed(2);
+    }
+</script>
+{% endblock %}

@@ -37,12 +37,16 @@
                         <div class="col-md-6 mb-3">
                             <label for="role" class="form-label">Role</label>
                             <select class="form-select" id="role" name="role" required>
-                                <option value="" selected disabled>Select Role</option>
-                                <option value="Receptionist">Receptionist</option>
-                                <!-- Add more roles here as needed and supported by backend -->
+                                <option value="" disabled>Select Role</option>
+                                <option value="Receptionist" {% if staff.role=='Receptionist' %}selected{% endif %}>
+                                    Receptionist</option>
+                                <option value="Lab Technician" {% if staff.role=='Lab Technician' %}selected{% endif %}>
+                                    Lab Technician</option>
+                                <option value="Pharmacist" {% if staff.role=='Pharmacist' %}selected{% endif %}>
+                                    Pharmacist</option>
                             </select>
                         </div>
-                         <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="department" class="form-label">Department</label>
                             <select class="form-select" id="department" name="department">
                                 <option value="">Select Department</option>

@@ -1,0 +1,63 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h3 class="mb-4">
+        {% if ambulance %}Edit Ambulance{% else %}Add Ambulance{% endif %}
+    </h3>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Vehicle Number</label>
+                <input type="text" name="vehicle_number" class="form-control"
+                    value="{{ ambulance.vehicle_number|default:'' }}" required>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Vehicle Type</label>
+                <select name="vehicle_type" class="form-control">
+                    <option value="Basic" {% if ambulance.vehicle_type=='Basic' %}selected{% endif %}>Basic Life Support
+                    </option>
+                    <option value="ICU" {% if ambulance.vehicle_type=='ICU' %}selected{% endif %}>ICU (Advanced)
+                    </option>
+                    <option value="Oxygen" {% if ambulance.vehicle_type=='Oxygen' %}selected{% endif %}>Patient
+                        Transport (Oxygen)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="Available" {% if ambulance.status=='Available' %}selected{% endif %}>Available
+                    </option>
+                    <option value="Busy" {% if ambulance.status=='Busy' %}selected{% endif %}>Busy</option>
+                    <option value="Maintenance" {% if ambulance.status=='Maintenance' %}selected{% endif %}>Maintenance
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Assign Driver</label>
+                <select name="driver" class="form-control">
+                    <option value="">-- Select Driver --</option>
+                    {% for driver in drivers %}
+                    <option value="{{ driver.id }}" {% if ambulance and ambulance.driver.id==driver.id %}selected{%
+                        endif %}>
+                        {{ driver.name }} ({{ driver.staff_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Only staff with 'Driver' role are shown.</small>
+            </div>
+        </div>
+
+        <button class="btn btn-primary">Save Vehicle</button>
+        <a href="{% url 'ambulance_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

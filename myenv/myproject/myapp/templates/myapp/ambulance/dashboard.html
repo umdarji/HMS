@@ -1,0 +1,179 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Ambulance Dashboard</h1>
+        <div>
+            <a href="{% url 'create_booking' %}" class="btn btn-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>New Emergency
+            </a>
+            <a href="{% url 'ambulance_list' %}" class="btn btn-primary ms-2">
+                <i class="fas fa-ambulance me-2"></i>Fleet Management
+            </a>
+            <a href="{% url 'booking_list' %}" class="btn btn-info ms-2">
+                <i class="fas fa-list me-2"></i>Trip History
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Fleet</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_vehicles }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ambulance fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Available</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_vehicles }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Trips</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_trips.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-road fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Pending Requests</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ bookings.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Bookings -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-warning text-dark">
+            <h6 class="m-0 font-weight-bold">⚠️ Pending Emergency Requests</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Contact</th>
+                            <th>Location</th>
+                            <th>Destination</th>
+                            <th>Requested At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.patient_name }}</td>
+                            <td>{{ booking.contact_phone }}</td>
+                            <td>{{ booking.from_location }}</td>
+                            <td>{{ booking.to_location }}</td>
+                            <td>{{ booking.request_date|date:"d M H:i" }}</td>
+                            <td>
+                                <a href="{% url 'assess_booking' booking.id %}" class="btn btn-success btn-sm">
+                                    Assign Ambulance
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No pending requests.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Fleet Status -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Fleet Status</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Vehicle No</th>
+                            <th>Type</th>
+                            <th>Driver</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for amb in ambulances %}
+                        <tr>
+                            <td>{{ amb.vehicle_number }}</td>
+                            <td>{{ amb.get_vehicle_type_display }}</td>
+                            <td>
+                                {% if amb.driver %}
+                                {{ amb.driver.name }}
+                                {% else %}
+                                <span class="text-danger">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if amb.status == 'Available' %}
+                                <span class="badge bg-success">Available</span>
+                                {% elif amb.status == 'Busy' %}
+                                <span class="badge bg-warning text-dark">On Trip</span>
+                                {% else %}
+                                <span class="badge bg-danger">Maintenance</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

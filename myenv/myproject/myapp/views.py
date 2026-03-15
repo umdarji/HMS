@@ -14,9 +14,6 @@ import razorpay
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import os
-import razorpay
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 import uuid
 import re
 import json
@@ -104,9 +101,19 @@ def unified_login_view(request):
                         pass
         
         if user and user.user_type == role:
-            create_otp(user)
+            otp, email_sent = create_otp(user)
             request.session['otp_user_id'] = user.id
             request.session['otp_email'] = user.email
+            
+            if not email_sent:
+                messages.error(request, 'Failed to send OTP email. Please check system configuration or contact admin.')
+                # Still redirecting to verify page as OTP is created, but user knows email failed
+                # Alternatively, stay on login page? But 'verify_otp' page lets them resend or useful for debugging.
+                # Let's stay on login page if it failed? No, OTP is created in DB. 
+                # Better to go to verify page so they can try "Resend" or maybe Enter it if they saw it in console (debug mode).
+            else:
+                messages.success(request, f'OTP sent to {user.email}')
+                
             return redirect('verify_otp')
         
         return render(request, 'myapp/auth/login.html', {
@@ -161,7 +168,11 @@ def resend_otp_view(request):
     if user_id:
         try:
             user = CustomUser.objects.get(id=user_id)
-            create_otp(user)
+            otp, email_sent = create_otp(user)
+            if email_sent:
+                messages.success(request, 'OTP resent successfully.')
+            else:
+                messages.error(request, 'Failed to resend OTP email.')
         except CustomUser.DoesNotExist:
             pass
     return redirect('verify_otp')
@@ -1122,8 +1133,11 @@ def staff_dashboard(request):
         return redirect('receptionist_dashboard')
     elif role == 'Lab Technician':
         return redirect('laboratory_dashboard')
+    elif role == 'Pharmacist':
+        return redirect('pharmacist_dashboard')
+    elif role == 'Driver':
+        return redirect('ambulance_dashboard')
         
-    context = {'role': role}
     context = {'role': role}
     return render(request, "myapp/staff/dashboard.html", context)
 
@@ -2862,3 +2876,378 @@ def bed_delete(request, id):
         'bed': bed,
         'base_template': base_template
     })
+@login_required
+def bed_delete(request, id):
+    # ... existing code ...
+    return redirect('bed_list')
+
+
+# ============ PHARMACY MANAGEMENT VIEWS ============
+
+@login_required
+def pharmacist_dashboard(request):
+    if request.user.user_type not in ['staff', 'admin']: # Allow admin to see too
+        return redirect('login')
+    
+    # If staff, check if pharmacist
+    if request.user.user_type == 'staff' and request.user.staff_profile.role != 'Pharmacist':
+        return redirect('staff_dashboard')
+
+    today = timezone.now().date()
+    
+    # Expiry Alerts (expiring in 30 days)
+    expiry_threshold = today + timedelta(days=30)
+    expiring_medicines = Medicine.objects.filter(expiry_date__lte=expiry_threshold, expiry_date__gte=today).order_by('expiry_date')
+    expired_medicines = Medicine.objects.filter(expiry_date__lt=today).order_by('expiry_date')
+    
+    # Low Stock Alerts
+    low_stock_medicines = [m for m in Medicine.objects.all() if m.is_low_stock]
+    
+    # Recent Bills
+    recent_bills = PharmacyBill.objects.all().order_by('-created_at')[:5]
+    
+    # Statistics
+    total_medicines = Medicine.objects.count()
+    total_suppliers = Supplier.objects.count()
+    today_sales = PharmacyBill.objects.filter(created_at__date=today).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    context = {
+        'expiring_medicines': expiring_medicines,
+        'expired_medicines': expired_medicines,
+        'low_stock_medicines': low_stock_medicines,
+        'recent_bills': recent_bills,
+        'total_medicines': total_medicines,
+        'total_suppliers': total_suppliers,
+        'today_sales': today_sales,
+    }
+    return render(request, 'myapp/pharmacy/dashboard.html', context)
+
+# --- SUPPLIER MANAGEMENT ---
+
+@login_required
+def supplier_list(request):
+    suppliers = Supplier.objects.all().order_by('-id')
+    return render(request, 'myapp/pharmacy/supplier_list.html', {'suppliers': suppliers})
+
+@login_required
+def add_supplier(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        contact = request.POST.get('contact_person')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        address = request.POST.get('address')
+        
+        Supplier.objects.create(name=name, contact_person=contact, phone=phone, email=email, address=address)
+        messages.success(request, 'Supplier added successfully.')
+        return redirect('supplier_list')
+    
+    return render(request, 'myapp/pharmacy/supplier_form.html')
+
+@login_required
+def edit_supplier(request, id):
+    supplier = get_object_or_404(Supplier, id=id)
+    if request.method == 'POST':
+        supplier.name = request.POST.get('name')
+        supplier.contact_person = request.POST.get('contact_person')
+        supplier.phone = request.POST.get('phone')
+        supplier.email = request.POST.get('email')
+        supplier.address = request.POST.get('address')
+        supplier.save()
+        messages.success(request, 'Supplier updated successfully.')
+        return redirect('supplier_list')
+    
+    return render(request, 'myapp/pharmacy/supplier_form.html', {'supplier': supplier})
+
+@login_required
+def delete_supplier(request, id):
+    supplier = get_object_or_404(Supplier, id=id)
+    supplier.delete()
+    messages.success(request, 'Supplier deleted successfully.')
+    return redirect('supplier_list')
+
+# --- MEDICINE MANAGEMENT ---
+
+@login_required
+def medicine_list(request):
+    medicines = Medicine.objects.all().order_by('expiry_date')
+    return render(request, 'myapp/pharmacy/medicine_list.html', {'medicines': medicines})
+
+@login_required
+def add_medicine(request):
+    suppliers = Supplier.objects.all()
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        manufacturer = request.POST.get('manufacturer')
+        supplier_id = request.POST.get('supplier')
+        batch = request.POST.get('batch_number')
+        expiry = request.POST.get('expiry_date')
+        price = request.POST.get('price')
+        stock = request.POST.get('stock_quantity')
+        alert = request.POST.get('min_stock_alert')
+        desc = request.POST.get('description')
+        
+        supplier = Supplier.objects.get(id=supplier_id) if supplier_id else None
+        
+        Medicine.objects.create(
+            name=name, manufacturer=manufacturer, supplier=supplier,
+            batch_number=batch, expiry_date=expiry, price=price,
+            stock_quantity=stock, min_stock_alert=alert, description=desc
+        )
+        messages.success(request, 'Medicine added successfully.')
+        return redirect('medicine_list')
+        
+    return render(request, 'myapp/pharmacy/medicine_form.html', {'suppliers': suppliers})
+
+@login_required
+def edit_medicine(request, id):
+    medicine = get_object_or_404(Medicine, id=id)
+    suppliers = Supplier.objects.all()
+    
+    if request.method == 'POST':
+        medicine.name = request.POST.get('name')
+        medicine.manufacturer = request.POST.get('manufacturer')
+        supplier_id = request.POST.get('supplier')
+        medicine.batch_number = request.POST.get('batch_number')
+        medicine.expiry_date = request.POST.get('expiry_date')
+        medicine.price = request.POST.get('price')
+        medicine.stock_quantity = request.POST.get('stock_quantity')
+        medicine.min_stock_alert = request.POST.get('min_stock_alert')
+        medicine.description = request.POST.get('description')
+        
+        if supplier_id:
+            medicine.supplier = Supplier.objects.get(id=supplier_id)
+            
+        medicine.save()
+        messages.success(request, 'Medicine updated successfully.')
+        return redirect('medicine_list')
+        
+    return render(request, 'myapp/pharmacy/medicine_form.html', {'medicine': medicine, 'suppliers': suppliers})
+
+@login_required
+def delete_medicine(request, id):
+    medicine = get_object_or_404(Medicine, id=id)
+    medicine.delete()
+    messages.success(request, 'Medicine deleted successfully.')
+    return redirect('medicine_list')
+
+# --- BILLING & SALES ---
+
+@login_required
+def pharmacy_billing(request):
+    medicines = Medicine.objects.filter(stock_quantity__gt=0, expiry_date__gte=timezone.now().date())
+    
+    if request.method == 'POST':
+        patient_name = request.POST.get('patient_name')
+        patient_phone = request.POST.get('patient_phone')
+        payment_method = request.POST.get('payment_method')
+        
+        # Create Bill
+        bill = PharmacyBill.objects.create(
+            patient_name=patient_name,
+            patient_phone=patient_phone,
+            payment_method=payment_method,
+            pharmacist=request.user.staff_profile if hasattr(request.user, 'staff_profile') else None
+        )
+        
+        # Process Items
+        medicine_ids = request.POST.getlist('medicine_id[]')
+        quantities = request.POST.getlist('quantity[]')
+        
+        total_amount = 0
+        
+        for med_id, qty in zip(medicine_ids, quantities):
+            if med_id and qty:
+                medicine = Medicine.objects.get(id=med_id)
+                quantity = int(qty)
+                
+                if medicine.stock_quantity >= quantity:
+                    # Deduct Stock
+                    medicine.stock_quantity -= quantity
+                    medicine.save()
+                    
+                    # Create Bill Item
+                    item = PharmacyBillItem.objects.create(
+                        bill=bill,
+                        medicine=medicine,
+                        quantity=quantity,
+                        price=medicine.price,
+                        total_price=medicine.price * quantity
+                    )
+                    total_amount += item.total_price
+                else:
+                    messages.error(request, f'Insufficient stock for {medicine.name}')
+        
+        bill.total_amount = total_amount
+        bill.save()
+        
+        messages.success(request, f'Bill generated successfully! Bill No: {bill.bill_number}')
+        return redirect('bill_receipt', bill_id=bill.id)
+        
+    return render(request, 'myapp/pharmacy/billing.html', {'medicines': medicines})
+
+@login_required
+def bill_receipt(request, bill_id):
+    bill = get_object_or_404(PharmacyBill, id=bill_id)
+    return render(request, 'myapp/pharmacy/bill_receipt.html', {'bill': bill})
+
+@login_required
+def sales_report(request):
+    today = timezone.now().date()
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    if start_date_str and end_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    else:
+        start_date = today
+        end_date = today
+        
+    bills = PharmacyBill.objects.filter(created_at__date__range=[start_date, end_date]).order_by('-created_at')
+    
+    total_sales = bills.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    bill_count = bills.count()
+    
+    return render(request, 'myapp/pharmacy/sales_report.html', {
+        'bills': bills,
+        'start_date': start_date,
+        'end_date': end_date,
+        'total_sales': total_sales,
+        'bill_count': bill_count
+    })
+
+# ============ AMBULANCE MANAGEMENT VIEWS ============
+
+@login_required
+def ambulance_dashboard(request):
+    ambulances = Ambulance.objects.all()
+    bookings = AmbulanceBooking.objects.filter(status='Pending').order_by('-request_date')
+    active_trips = AmbulanceBooking.objects.filter(status='Confirmed')
+    
+    total_vehicles = ambulances.count()
+    available_vehicles = ambulances.filter(status='Available').count()
+    
+    context = {
+        'ambulances': ambulances,
+        'bookings': bookings,
+        'active_trips': active_trips,
+        'total_vehicles': total_vehicles,
+        'available_vehicles': available_vehicles
+    }
+    return render(request, 'myapp/ambulance/dashboard.html', context)
+
+@login_required
+def ambulance_list(request):
+    ambulances = Ambulance.objects.all()
+    return render(request, 'myapp/ambulance/vehicle_list.html', {'ambulances': ambulances})
+
+@login_required
+def add_ambulance(request):
+    # Filter staff for drivers
+    drivers = Staff.objects.filter(role='Driver')
+    if request.method == 'POST':
+        vehicle_number = request.POST.get('vehicle_number')
+        vehicle_type = request.POST.get('vehicle_type')
+        status = request.POST.get('status')
+        driver_id = request.POST.get('driver')
+        
+        driver = Staff.objects.get(id=driver_id) if driver_id else None
+        
+        Ambulance.objects.create(
+            vehicle_number=vehicle_number,
+            vehicle_type=vehicle_type,
+            status=status,
+            driver=driver
+        )
+        messages.success(request, 'Ambulance added successfully!')
+        return redirect('ambulance_list')
+        
+    return render(request, 'myapp/ambulance/vehicle_form.html', {'drivers': drivers})
+
+@login_required
+def edit_ambulance(request, id):
+    ambulance = get_object_or_404(Ambulance, id=id)
+    drivers = Staff.objects.filter(role='Driver')
+    if request.method == 'POST':
+        ambulance.vehicle_number = request.POST.get('vehicle_number')
+        ambulance.vehicle_type = request.POST.get('vehicle_type')
+        ambulance.status = request.POST.get('status')
+        driver_id = request.POST.get('driver')
+        
+        if driver_id:
+            ambulance.driver = Staff.objects.get(id=driver_id)
+        else:
+            ambulance.driver = None
+            
+        ambulance.save()
+        messages.success(request, 'Ambulance updated successfully!')
+        return redirect('ambulance_list')
+        
+    return render(request, 'myapp/ambulance/vehicle_form.html', {'ambulance': ambulance, 'drivers': drivers})
+
+@login_required
+def create_booking(request):
+    if request.method == 'POST':
+        patient_name = request.POST.get('patient_name')
+        contact_phone = request.POST.get('contact_phone')
+        from_loc = request.POST.get('from_location')
+        to_loc = request.POST.get('to_location')
+        
+        AmbulanceBooking.objects.create(
+            patient_name=patient_name,
+            contact_phone=contact_phone,
+            from_location=from_loc,
+            to_location=to_loc,
+            status='Pending'
+        )
+        messages.success(request, 'Ambulance requested successfully!')
+        return redirect('ambulance_dashboard') # Or booking list
+    
+    return render(request, 'myapp/ambulance/booking_form.html')
+
+@login_required
+def booking_list(request):
+    bookings = AmbulanceBooking.objects.all().order_by('-request_date')
+    return render(request, 'myapp/ambulance/booking_list.html', {'bookings': bookings})
+
+@login_required
+def assess_booking(request, id):
+    # Admin/Staff assigns ambulance and driver
+    booking = get_object_or_404(AmbulanceBooking, id=id)
+    ambulances = Ambulance.objects.filter(status='Available')
+    
+    if request.method == 'POST':
+        ambulance_id = request.POST.get('ambulance')
+        ambulance = Ambulance.objects.get(id=ambulance_id)
+        
+        booking.ambulance = ambulance
+        booking.driver = ambulance.driver # Default to assigned driver
+        booking.distance_km = request.POST.get('distance_km')
+        booking.total_amount = request.POST.get('total_amount')
+        booking.status = 'Confirmed'
+        booking.save()
+        
+        ambulance.status = 'Busy'
+        ambulance.save()
+        
+        messages.success(request, 'Ambulance assigned successfully!')
+        return redirect('booking_list')
+        
+    return render(request, 'myapp/ambulance/assign_ambulance.html', {'booking': booking, 'ambulances': ambulances})
+
+@login_required
+def complete_booking(request, id):
+    booking = get_object_or_404(AmbulanceBooking, id=id)
+    if booking.status == 'Confirmed':
+        booking.status = 'Completed'
+        booking.completion_date = timezone.now()
+        booking.save()
+        
+        if booking.ambulance:
+            booking.ambulance.status = 'Available'
+            booking.ambulance.save()
+            
+        messages.success(request, 'Trip completed.')
+        
+    return redirect('booking_list')

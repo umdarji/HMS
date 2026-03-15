@@ -145,7 +145,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 # REPLACE WITH YOUR ACTUAL CREDENTIALS
 EMAIL_HOST_USER = 'healthcaresanjeevani433@gmail.com' 
-EMAIL_HOST_PASSWORD = 'gvvp teip evea szdr' # IMPORTANT: Must be a Google App Password, not your login password
+EMAIL_HOST_PASSWORD = 'jwzi rlsw ebkd ecjo' # IMPORTANT: Must be a Google App Password, not your login password
 
 # Razorpay Settings
 RAZORPAY_KEY_ID = 'rzp_test_S7dpbztOktGIVm'  # Replace with actual Key ID
